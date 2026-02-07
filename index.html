@@ -14,40 +14,29 @@ body {
   font-family: Arial, sans-serif;
   padding: 10px;
   text-align: center;
+  background: #fff;
+  color: #000;
+  transition: background 0.3s, color 0.3s;
 }
-textarea {
-  width: 100%;
-  height: 120px;
-}
-#writer {
-  width: 300px;
-  height: 300px;
-  margin: 15px auto;
-  border: 1px solid #ccc;
-}
-#char {
-  font-size: 56px;
-  margin-top: 10px;
-}
-#pinyin {
-  font-size: 18px;
-  margin-bottom: 10px;
-}
-button {
-  margin: 5px;
-  padding: 10px 14px;
-  font-size: 16px;
-}
-@media (prefers-color-scheme: dark) {
-  body { background: #000; color: #fff; }
-  textarea { background: #000; color: #fff; border: 1px solid #444; }
-  #writer { border-color: #444; }
-}
+body.dark-mode { background: #000; color: #fff; }
+textarea { width: 100%; height: 120px; }
+#writer { width: 300px; height: 300px; margin: 15px auto; border: 1px solid #ccc; }
+#char { font-size: 56px; margin-top: 10px; }
+#pinyin { font-size: 18px; margin-bottom: 5px; }
+#translation { font-size: 16px; font-style: italic; margin-bottom: 10px; }
+button { margin: 5px; padding: 10px 14px; font-size: 16px; cursor: pointer; }
+#darkToggle { display: inline-flex; align-items: center; justify-content: center; }
+#darkToggle img { width: 20px; height: 20px; margin-right: 5px; }
+.stats { margin: 10px; font-size: 16px; }
+#streakTop { font-size: 24px; margin-bottom: 10px; display: flex; align-items: center; justify-content: center; }
+#streakTop img { width: 24px; height: 24px; margin-left: 5px; }
 </style>
 </head>
 <body>
 
 <h2>hanzi-practice-buddy</h2>
+<div id="streakTop">🔥 <span id="topStreak">0</span></div>
+<button id="darkToggle"><img id="darkIcon" src="https://img.icons8.com/ios-filled/50/000000/sun--v1.png"/>Toggle Dark Mode</button><br>
 <textarea id="wordList" placeholder="Enter words (simplified or traditional), one per line"></textarea><br>
 <button onclick="loadWords()">Load</button>
 <button onclick="resetChar()">Reset</button>
@@ -58,106 +47,140 @@ button {
 <button onclick="nextChar()">Next</button>
 <div id="char"></div>
 <div id="pinyin"></div>
+<div id="translation"></div>
 <div id="writer"></div>
+<div class="stats">
+  <div id="streak">Daily streak: 0</div>
+  <div id="todayChars"></div>
+</div>
 
 <script>
 const converter = OpenCC.Converter({ from: 'cn', to: 'tw' });
-let words = [];
-let wordIndex = 0;
-let charIndex = 0;
-let writer = null;
-const toneColors = {1:'#007AFF',2:'#34C759',3:'#FF9500',4:'#FF3B30',5:'#8E8E93'};
+let words = [], wordIndex=0, charIndex=0, writer=null, todaySet=new Set();
+let streak = 0, lastPracticeDate = null;
+const toneColors={1:'#007AFF',2:'#34C759',3:'#FF9500',4:'#FF3B30',5:'#8E8E93'};
+const MAX_MISTAKES = 5;
 
-function saveProgress() {
-  localStorage.setItem('hanziPracticeBuddy', JSON.stringify({words,wordIndex,charIndex}));
+// Map of words to English translations (can be extended)
+const translations = {
+  '你好': 'Hello',
+  '谢谢': 'Thank you',
+  '再见': 'Goodbye'
+};
+
+function saveProgress(){
+  localStorage.setItem('hanziPracticeBuddy', JSON.stringify({
+    words, wordIndex, charIndex, today:[...todaySet], streak, lastPracticeDate
+  }));
 }
 
-function loadProgress() {
+function loadProgress(){
   const saved = localStorage.getItem('hanziPracticeBuddy');
-  if (!saved) return false;
+  if(!saved) return false;
   const data = JSON.parse(saved);
-  words = data.words;
-  wordIndex = data.wordIndex;
-  charIndex = data.charIndex;
+  words = data.words || [];
+  wordIndex = data.wordIndex || 0;
+  charIndex = data.charIndex || 0;
+  todaySet = new Set(data.today || []);
+  streak = data.streak || 0;
+  lastPracticeDate = data.lastPracticeDate || null;
   updateTextarea();
-  showChar();
+  if(words.length>0) showChar();
+  updateStats();
   return true;
 }
 
-function updateTextarea() {
-  document.getElementById('wordList').value = words.join('\n');
-}
+function updateTextarea(){ document.getElementById('wordList').value = words.join('\n'); }
 
-function loadWords() {
+function loadWords(){
   const input = document.getElementById('wordList').value.split('\n').map(w=>w.trim()).filter(w=>w.length>0);
-  if (!input.length){alert('Enter at least one word');return;}
-  words = input.map(w=>converter(w));
-  wordIndex=0; charIndex=0;
-  saveProgress();
-  showChar();
+  if(!input.length){ alert('Enter at least one word'); return; }
+  words = input.map(w=>converter(w)); wordIndex=0; charIndex=0; saveProgress(); showChar();
 }
 
-function getCurrentChar(){ return words[wordIndex][charIndex]; }
+function getCurrentChar(){ return words[wordIndex] ? words[wordIndex][charIndex] : ''; }
+
+function updateStats(){
+  document.getElementById('streak').textContent = 'Daily streak: '+streak;
+  document.getElementById('topStreak').textContent = streak;
+  document.getElementById('todayChars').textContent = 'Today practiced: '+[...todaySet].join(', ');
+}
+
+function checkDailyStreak(){
+  const today = new Date().toISOString().slice(0,10);
+  if(lastPracticeDate !== today){
+    const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0,10);
+    if(lastPracticeDate === yesterday){ streak++; }
+    else{ streak = 1; }
+    lastPracticeDate = today;
+  }
+}
 
 function showChar(){
-  const char = getCurrentChar();
+  const char = getCurrentChar(); if(!char) return;
+  todaySet.add(char);
+  checkDailyStreak();
+
   const pyNum = pinyinPro.pinyin(char,{toneType:'num'});
   const tone = parseInt(pyNum.match(/[1-5]/)?.[0]||5);
   const pyMark = pinyinPro.pinyin(char,{toneType:'symbol'});
-  const charDiv = document.getElementById('char');
-  charDiv.textContent = char;
-  charDiv.style.color = toneColors[tone];
+
+  document.getElementById('char').textContent = char;
+  document.getElementById('char').style.color = toneColors[tone];
   document.getElementById('pinyin').textContent = pyMark;
+  document.getElementById('translation').textContent = translations[words[wordIndex]] || '';
+
   document.getElementById('writer').innerHTML='';
-  writer = HanziWriter.create('writer', char, {width:300,height:300,padding:5,showOutline:true,showCharacter:false});
-  writer.quiz({onComplete:()=>{setTimeout(nextChar,400);}});
-  saveProgress();
+  writer = HanziWriter.create('writer',char,{width:300,height:300,padding:5,showOutline:true,showCharacter:false});
+  writer.quiz({onComplete:()=>{ saveProgress(); updateStats(); setTimeout(nextChar,400); }});
+
+  updateStats(); saveProgress();
 }
 
 function nextChar(){
-  if(charIndex<words[wordIndex].length-1){charIndex++;}
-  else if(wordIndex<words.length-1){wordIndex++;charIndex=0;}
-  else{alert('All done 🎉');saveProgress();return;}
+  if(words[wordIndex] && charIndex<words[wordIndex].length-1){ charIndex++; }
+  else if(wordIndex<words.length-1){ wordIndex++; charIndex=0; }
+  else{ alert('All done 🎉'); saveProgress(); return; }
   showChar();
 }
 
-function prevChar(){
-  if(charIndex>0){charIndex--;} else if(wordIndex>0){wordIndex--;charIndex=words[wordIndex].length-1;}
-  showChar();
-}
-
-function resetChar(){showChar();}
+function prevChar(){ if(charIndex>0){ charIndex--; } else if(wordIndex>0){ wordIndex--; charIndex=words[wordIndex].length-1; } showChar(); }
+function resetChar(){ showChar(); }
 
 function exportWords(){
-  const data = JSON.stringify({version:1,words,wordIndex,charIndex});
+  const data = JSON.stringify({version:1,words,wordIndex,charIndex,today:[...todaySet],streak,lastPracticeDate});
   const blob = new Blob([data],{type:'application/json'});
   const url = URL.createObjectURL(blob);
-  const a=document.createElement('a'); a.href=url; a.download='hanzi_practice_buddy.json'; a.click(); URL.revokeObjectURL(url);
+  const a = document.createElement('a'); a.href=url; a.download='hanzi_practice_buddy.json'; a.click(); URL.revokeObjectURL(url);
 }
 
 function importWords(){
-  const input=document.createElement('input'); input.type='file'; input.accept='application/json';
-  input.onchange=e=>{
-    const file=e.target.files[0];
-    const reader=new FileReader();
-    reader.onload=()=>{
+  const input = document.createElement('input'); input.type='file'; input.accept='application/json';
+  input.onchange = e => {
+    const file = e.target.files[0]; const reader = new FileReader();
+    reader.onload = () => {
       try{
-        const data=JSON.parse(reader.result);
-        if(!data.words) throw 'Invalid file';
-        words=data.words.map(w=>converter(w));
-        wordIndex=data.wordIndex||0;
-        charIndex=data.charIndex||0;
-        updateTextarea();
-        showChar();
-      }catch(err){alert('Import failed: '+err);}
+        const data = JSON.parse(reader.result); if(!data.words) throw 'Invalid file';
+        words = data.words.map(w=>converter(w)); wordIndex=data.wordIndex||0; charIndex=data.charIndex||0;
+        todaySet = new Set(data.today||[]);
+        streak = data.streak||0; lastPracticeDate = data.lastPracticeDate||null;
+        updateTextarea(); showChar();
+      }catch(err){ alert('Import failed: '+err); }
     };
     reader.readAsText(file);
   };
   input.click();
 }
 
+const darkToggle = document.getElementById('darkToggle');
+const darkIcon = document.getElementById('darkIcon');
+darkToggle.onclick = () => {
+  document.body.classList.toggle('dark-mode');
+  if(document.body.classList.contains('dark-mode')) darkIcon.src='https://img.icons8.com/ios-filled/50/ffffff/moon-symbol.png';
+  else darkIcon.src='https://img.icons8.com/ios-filled/50/000000/sun--v1.png';
+};
+
 loadProgress();
 </script>
 </body>
 </html>
-

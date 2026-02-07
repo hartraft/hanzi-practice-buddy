@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hanzi Stroke Quiz</title>
+
+<!-- Hanzi Writer -->
+<script src="https://unpkg.com/hanzi-writer@2.3.0/dist/hanzi-writer.min.js"></script>
+
+<!-- Pinyin -->
+<script src="https://unpkg.com/pinyin-pro/dist/index.js"></script>
+
+<!-- OpenCC for Simplified → Traditional -->
+<script src="https://unpkg.com/opencc-js@1.0.5/dist/umd/full.js"></script>
+
+<style>
+body {
+  font-family: Arial, sans-serif;
+  padding: 10px;
+  text-align: center;
+}
+
+textarea {
+  width: 100%;
+  height: 120px;
+}
+
+#writer {
+  width: 300px;
+  height: 300px;
+  margin: 15px auto;
+  border: 1px solid #ccc;
+}
+
+#char {
+  font-size: 56px;
+  margin-top: 10px;
+}
+
+#pinyin {
+  font-size: 18px;
+  margin-bottom: 10px;
+}
+
+button {
+  margin: 5px;
+  padding: 10px 14px;
+  font-size: 16px;
+}
+</style>
+</head>
+
+<body>
+
+<h2>Stroke Order Quiz</h2>
+
+<textarea id="wordList" placeholder="Enter words (simplified or traditional), one per line"></textarea><br>
+<button onclick="loadWords()">Load</button>
+<button onclick="resetChar()">Reset</button>
+<button onclick="exportWords()">Export</button>
+<button onclick="importWords()">Import</button>
+
+<br>
+<button onclick="prevChar()">Prev</button>
+<button onclick="nextChar()">Next</button>
+
+<div id="char"></div>
+<div id="pinyin"></div>
+
+<div id="writer"></div>
+
+<script>
+// Register PWA
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js');
+}
+
+const converter = OpenCC.Converter({ from: 'cn', to: 'tw' });
+
+let words = [];
+let wordIndex = 0;
+let charIndex = 0;
+let writer = null;
+
+// Pleco tone colors
+const toneColors = {
+  1: '#007AFF',
+  2: '#34C759',
+  3: '#FF9500',
+  4: '#FF3B30',
+  5: '#8E8E93'
+};
+
+function saveProgress() {
+  localStorage.setItem('hanziProgress', JSON.stringify({ words, wordIndex, charIndex }));
+}
+
+function loadProgress() {
+  const saved = localStorage.getItem('hanziProgress');
+  if (!saved) return false;
+  const data = JSON.parse(saved);
+  words = data.words;
+  wordIndex = data.wordIndex;
+  charIndex = data.charIndex;
+  showChar();
+  return true;
+}
+
+function loadWords() {
+  const input = document.getElementById('wordList').value
+    .split('\n')
+    .map(w => w.trim())
+    .filter(w => w.length > 0);
+
+  if (!input.length) {
+    alert('Enter at least one word');
+    return;
+  }
+
+  words = input.map(w => converter(w));
+  wordIndex = 0;
+  charIndex = 0;
+  saveProgress();
+  showChar();
+}
+
+function getCurrentChar() {
+  return words[wordIndex][charIndex];
+}
+
+function showChar() {
+  const char = getCurrentChar();
+
+  const pyNum = pinyinPro.pinyin(char, { toneType: 'num' });
+  const tone = parseInt(pyNum.match(/[1-5]/)?.[0] || 5);
+  const pyMark = pinyinPro.pinyin(char, { toneType: 'symbol' });
+
+  const charDiv = document.getElementById('char');
+  charDiv.textContent = char;
+  charDiv.style.color = toneColors[tone];
+
+  document.getElementById('pinyin').textContent = pyMark;
+
+  document.getElementById('writer').innerHTML = '';
+
+  writer = HanziWriter.create('writer', char, {
+    width: 300,
+    height: 300,
+    padding: 5,
+    showOutline: true,
+    showCharacter: false
+  });
+
+  writer.quiz({
+    onComplete: () => {
+      setTimeout(nextChar, 400);
+    }
+  });
+
+  saveProgress();
+}
+
+function nextChar() {
+  if (charIndex < words[wordIndex].length - 1) {
+    charIndex++;
+  } else if (wordIndex < words.length - 1) {
+    wordIndex++;
+    charIndex = 0;
+  } else {
+    alert('All done 🎉');
+    saveProgress();
+    return;
+  }
+  showChar();
+}
+
+function prevChar() {
+  if (charIndex > 0) {
+    charIndex--;
+  } else if (wordIndex > 0) {
+    wordIndex--;
+    charIndex = words[wordIndex].length - 1;
+  }
+  showChar();
+}
+
+function resetChar() {
+  showChar();
+}
+
+function exportWords() {
+  const data = JSON.stringify({ words, wordIndex, charIndex });
+  const blob = new Blob([data], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'hanzi_words.json';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function importWords() {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = 'application/json';
+  input.onchange = e => {
+    const file = e.target.files[0];
+    const reader = new FileReader();
+    reader.onload = () => {
+      const data = JSON.parse(reader.result);
+      words = data.words || [];
+      wordIndex = data.wordIndex || 0;
+      charIndex = data.charIndex || 0;
+      saveProgress();
+      showChar();
+    };
+    reader.readAsText(file);
+  };
+  input.click();
+}
+
+loadProgress();
+</script>
+
+</body>
+</html>
+

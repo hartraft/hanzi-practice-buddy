@@ -1,20 +1,27 @@
-const CACHE_NAME = 'hanzi-practice-buddy-v1';
-const ASSETS = [
-  './',
-  './index.html',
-  './manifest.json'
-];
+const CACHE_NAME = 'hanzi-quiz-v3';
 
 self.addEventListener('install', event => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS))
-  );
+  self.skipWaiting();
+});
+
+self.addEventListener('activate', event => {
+  event.waitUntil(self.clients.claim());
 });
 
 self.addEventListener('fetch', event => {
   event.respondWith(
-    caches.match(event.request).then(
-      response => response || fetch(event.request)
+    caches.open(CACHE_NAME).then(cache =>
+      cache.match(event.request).then(response => {
+        if (response) return response;
+
+        return fetch(event.request).then(networkResponse => {
+          // Cache hanzi stroke JSON files
+          if (event.request.url.includes('/data/')) {
+            cache.put(event.request, networkResponse.clone());
+          }
+          return networkResponse;
+        });
+      })
     )
   );
 });

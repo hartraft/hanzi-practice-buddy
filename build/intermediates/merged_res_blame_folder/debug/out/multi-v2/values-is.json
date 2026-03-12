@@ -1,0 +1,43 @@
+{
+    "logs": [
+        {
+            "outputFile": "com.hartraft.hanzipracticebuddy-mergeDebugResources-28:/values-is/values-is.xml",
+            "map": [
+                {
+                    "source": "/home/hartraft/.gradle/caches/8.10/transforms/5f4e845ff19e5c0c0624e1aef5875841/transformed/core-1.9.0/res/values-is/values-is.xml",
+                    "from": {
+                        "startLines": "2",
+                        "startColumns": "4",
+                        "startOffsets": "55",
+                        "endColumns": "100",
+                        "endOffsets": "151"
+                    },
+                    "to": {
+                        "startLines": "12",
+                        "startColumns": "4",
+                        "startOffsets": "929",
+                        "endColumns": "100",
+                        "endOffsets": "1025"
+                    }
+                },
+                {
+                    "source": "/home/hartraft/.gradle/caches/8.10/transforms/3878cf2e008e3226505de87614e89974/transformed/jetified-ui-1.0.1/res/values-is/values-is.xml",
+                    "from": {
+                        "startLines": "2,3,4,5,6,7,8,9,10,11,12,13",
+                        "startColumns": "4,4,4,4,4,4,4,4,4,4,4,4",
+                        "startOffsets": "105,196,277,376,456,552,641,723,791,859,929,997",
+                        "endColumns": "90,80,98,79,95,88,81,67,67,69,67,119",
+                        "endOffsets": "191,272,371,451,547,636,718,786,854,924,992,1112"
+                    },
+                    "to": {
+                        "startLines": "2,3,4,5,6,7,8,9,10,11,13,14",
+                        "startColumns": "4,4,4,4,4,4,4,4,4,4,4,4",
+                        "startOffsets": "105,196,277,376,456,552,641,723,791,859,1030,1098",
+                        "endColumns": "90,80,98,79,95,88,81,67,67,69,67,119",
+                        "endOffsets": "191,272,371,451,547,636,718,786,854,924,1093,1213"
+                    }
+                }
+            ]
+        }
+    ]
+}

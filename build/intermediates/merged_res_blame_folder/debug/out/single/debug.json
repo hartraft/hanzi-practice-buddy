@@ -1,0 +1,10 @@
+[
+    {
+        "merged": "com.hartraft.hanzipracticebuddy-merged_res-30:/mipmap-hdpi_ic_launcher.xml.flat",
+        "source": "com.hartraft.hanzipracticebuddy-androidMain-31:/mipmap-hdpi/ic_launcher.xml"
+    },
+    {
+        "merged": "com.hartraft.hanzipracticebuddy-merged_res-30:/drawable_ic_launcher_foreground.xml.flat",
+        "source": "com.hartraft.hanzipracticebuddy-androidMain-31:/drawable/ic_launcher_foreground.xml"
+    }
+]

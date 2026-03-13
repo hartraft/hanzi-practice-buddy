@@ -2,6 +2,16 @@
 
 ## Building
 
+### Android APK
+
+**Requirements:** x86_64 machine (the Android Gradle Plugin doesn't support ARM builds natively)
+
+```bash
+./gradlew assembleDebug
+```
+
+The APK will be in `build/outputs/apk/debug/`.
+
 ### Web
 
 ```bash

@@ -1,7 +1,10 @@
 package com.hartraft.hanzipracticebuddy.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -11,9 +14,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import com.hartraft.hanzipracticebuddy.Jyut6pingLookup
 import com.hartraft.hanzipracticebuddy.ToneColors
 import com.hartraft.hanzipracticebuddy.getTone
 import com.hartraft.hanzipracticebuddy.ui.theme.HanziPracticeBuddyTheme
+
+enum class LanguageMode { MANDARIN, CANTONESE }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -30,17 +37,36 @@ fun HanziPracticeApp() {
     var totalLearned by remember { mutableIntStateOf(0) }
     var showCompletionMessage by remember { mutableStateOf(false) }
     var allChars by remember { mutableStateOf<Set<String>>(emptySet()) }
+    var languageMode by remember { mutableStateOf(LanguageMode.MANDARIN) }
+    var showDictionaryPopup by remember { mutableStateOf(false) }
+    var dictionaryQuery by remember { mutableStateOf("") }
+    var dictionaryCandidates by remember { mutableStateOf<List<Pair<String, String>>>(emptyList()) }
 
     val toneColors = mapOf(
         1 to androidx.compose.ui.graphics.Color(ToneColors.tone1),
         2 to androidx.compose.ui.graphics.Color(ToneColors.tone2),
         3 to androidx.compose.ui.graphics.Color(ToneColors.tone3),
         4 to androidx.compose.ui.graphics.Color(ToneColors.tone4),
-        5 to androidx.compose.ui.graphics.Color(ToneColors.tone5)
+        5 to androidx.compose.ui.graphics.Color(ToneColors.tone5),
+        6 to androidx.compose.ui.graphics.Color(ToneColors.tone6)
     )
 
     fun getPinyin(char: String): String {
-        return PinyinLookup.pinyin(char)
+        return when (languageMode) {
+            LanguageMode.MANDARIN -> PinyinLookup.pinyin(char)
+            LanguageMode.CANTONESE -> Jyut6pingLookup.jyut6ping(char)
+        }
+    }
+
+    fun updateDictionaryCandidates(query: String) {
+        dictionaryQuery = query
+        dictionaryCandidates = Jyut6pingLookup.searchCandidates(query)
+    }
+
+    fun insertWord(word: String) {
+        wordsText = if (wordsText.isEmpty()) word else "$wordsText\n$word"
+        showDictionaryPopup = false
+        dictionaryQuery = ""
     }
 
     fun loadWords() {
@@ -99,6 +125,11 @@ fun HanziPracticeApp() {
                 TopAppBar(
                     title = { Text("Hanzi Practice Buddy") },
                     actions = {
+                        TextButton(onClick = { 
+                            languageMode = if (languageMode == LanguageMode.MANDARIN) LanguageMode.CANTONESE else LanguageMode.MANDARIN
+                        }) {
+                            Text(if (languageMode == LanguageMode.MANDARIN) "普通话" else "粵語")
+                        }
                         TextButton(onClick = { isDarkMode = !isDarkMode }) {
                             Text(if (isDarkMode) "☀️" else "🌙")
                         }
@@ -123,13 +154,43 @@ fun HanziPracticeApp() {
 
                 OutlinedTextField(
                     value = wordsText,
-                    onValueChange = { wordsText = it },
+                    onValueChange = { 
+                        wordsText = it
+                        if (languageMode == LanguageMode.CANTONESE) {
+                            updateDictionaryCandidates(it.takeLast(10))
+                        }
+                    },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(120.dp),
                     placeholder = { Text("Enter words, one per line") },
                     shape = RoundedCornerShape(8.dp)
                 )
+
+                if (languageMode == LanguageMode.CANTONESE && dictionaryQuery.isNotEmpty() && dictionaryCandidates.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        LazyColumn(
+                            modifier = Modifier.heightIn(max = 150.dp)
+                        ) {
+                            items(dictionaryCandidates) { (char, pinyin) ->
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable { insertWord(char) }
+                                        .padding(8.dp),
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Text(char, fontWeight = FontWeight.Bold)
+                                    Text(pinyin, color = MaterialTheme.colorScheme.secondary)
+                                }
+                            }
+                        }
+                    }
+                }
 
                 Spacer(modifier = Modifier.height(8.dp))
 

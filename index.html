@@ -23,15 +23,32 @@ textarea { width:100%; height:120px; margin-bottom:5px; }
 #stats { font-size:14px; margin-top:5px; font-style:italic; white-space: pre-line; }
 button { margin:5px; padding:10px 14px; font-size:16px; cursor:pointer; }
 #streak { font-size:22px; margin:8px; }
+#dictionaryPopup {
+  display:none; position:absolute; background:#fff; border:1px solid #ccc;
+  border-radius:8px; max-height:200px; overflow-y:auto; z-index:100;
+  width:calc(100% - 20px); max-width:400px; left:50%; transform:translateX(-50%);
+  text-align:left; box-shadow:0 4px 12px rgba(0,0,0,0.15);
+}
+body.dark #dictionaryPopup { background:#333; border-color:#555; }
+#dictionaryPopup .dict-item { padding:10px; border-bottom:1px solid #eee; cursor:pointer; }
+body.dark #dictionaryPopup .dict-item { border-bottom-color:#444; }
+#dictionaryPopup .dict-item:hover { background:#f5f5f5; }
+body.dark #dictionaryPopup .dict-item:hover { background:#444; }
+#dictionaryPopup .dict-char { font-size:20px; font-weight:bold; }
+#dictionaryPopup .dict-pinyin { font-size:14px; color:#666; margin-left:8px; }
+body.dark #dictionaryPopup .dict-pinyin { color:#aaa; }
 </style>
 </head>
 <body>
 
 <h2>hanzi-practice-buddy</h2>
 <div id="streak">&#128293; 0</div>
+<button id="langToggle">普通话</button>
 <button id="darkToggle">&#127769; / &#9728;</button>
 
-<textarea id="wordList" placeholder="Enter words, one per line"></textarea><br>
+<textarea id="wordList" placeholder="Enter words, one per line"></textarea>
+<div id="dictionaryPopup"></div>
+<br>
 <button id="loadBtn">Load</button>
 <button id="prevBtn">Previous</button>
 <button id="nextBtn">Next</button>
@@ -39,7 +56,7 @@ button { margin:5px; padding:10px 14px; font-size:16px; cursor:pointer; }
 <button id="importBtn">Import</button>
 <button id="pdfBtn">Generate PDF Worksheet</button>
 <button id="statsBtn">Show Stats</button>
-<button id="gamesBtn">Games</button> <!-- Placeholder button -->
+<button id="gamesBtn">Games</button>
 <p><em>Future games: Big2, Chinese Chess</em></p>
 
 <div id="char"></div>
@@ -49,7 +66,325 @@ button { margin:5px; padding:10px 14px; font-size:16px; cursor:pointer; }
 
 <script>
 const converter = OpenCC.Converter({ from:'cn', to:'tw' });
-const toneColors = {1:'#007AFF',2:'#34C759',3:'#FF9500',4:'#FF3B30',5:'#8E8E93'};
+// Pleco tone colors: 1=Red, 2=Green, 3=Blue, 4=Purple, 5=Gray, 6=Orange (Cantonese)
+const toneColors = {1:'#FF0000',2:'#34C759',3:'#007AFF',4:'#9C27B0',5:'#9E9E9E',6:'#FF9500'};
+
+// Language mode: 'mandarin' or 'cantonese'
+let langMode = 'mandarin';
+
+// Cantonese dictionary (Jyut6ping) - subset for demo
+const jyut6pingDict = {
+"你":"nei5","我":"ngo5","佢":"keoi5","佢哋":"keoi5 dei6","佢哋":"keoi5dei6",
+"佢":"keoi5","佢":"keoi5","佢":"keoi5","我哋":"ngo5 dei6","我哋":"ngo5dei6",
+"你":"nei5","你":"nei5","你":"nei5","你":"nei5","你":"nei5",
+"佢":"keoi5","我":"ngo5","你":"nei5","佢":"keoi5","我":"ngo5",
+"有":"jau5","人":"jan4","一":"jat1","的":"dik1","係":"hai6",
+"個":"go3","大":"daai6","以":"ji5","日":"jat6","出":"ceot1",
+"唔":"m4","都":"dou1","不":"bat1","時":"si4","過":"gwo3",
+"地":"dei6","得":"dak1","後":"hau6","要":"jiu3","同":"tung4",
+"到":"dou2","到":"dou3","可":"ho2","港":"gong2","就":"zau6",
+"家":"gaa1","自":"zi6","成":"sing4","但":"daan6","前":"cin4",
+"多":"do1","在":"zoi6","係":"hai6","開":"hoi1","用":"jung6",
+"去":"heoi3","其":"kei4","場":"coeng4","入":"jap6","無":"mou4",
+"會":"wui5","對":"deoi3","好":"hou2","好":"hou3","嘅":"ge3",
+"手":"sau2","點":"dim2","心":"sam1","主":"zyu2","事":"si6",
+"本":"bun2","為":"wai4","為":"wai6","話":"waa6","最":"zeoi3",
+"實":"sat6","而":"ji4","經":"ging1","之":"zi1","今":"gam1",
+"香":"hoeng1","發":"faat3","機":"gei1","定":"ding6","公":"gung1",
+"中":"zung1","中":"zung3","如":"jyu4","方":"fong1","意":"ji3",
+"咁":"gam3","又":"jau6","面":"min6","加":"gaa1","來":"loi4",
+"做":"zou6","了":"liu5","真":"zan1","法":"faat3","月":"jyut6",
+"然":"jin4","比":"bei2","現":"jin6","力":"lik6","全":"cyun4",
+"先":"sin1","學":"hok6","已":"ji5","因":"jan1","新":"san1",
+"明":"ming4","於":"jyu1","工":"gung1","外":"ngoi6","民":"man4",
+"所":"so2","及":"kap6","身":"san1","能":"nang4","問":"man6",
+"美":"mei5","作":"zok3","球":"kau4","睇":"tai2","見":"gin3",
+"理":"lei5","想":"soeng2","員":"jyun4","高":"gou1","頭":"tau4",
+"位":"wai6","冇":"mou5","小":"siu2","收":"sau1","只":"zi2",
+"車":"ce1","表":"biu2","啲":"di1","政":"zing3","食":"sik6",
+"等":"dang2","電":"din6","和":"wo4","和":"wo6","至":"zi3",
+"水":"seoi2","老":"lou5","己":"gei2","利":"lei6","市":"si5",
+"買":"maai5","友":"jau5","講":"gong2","反":"faan2","下":"haa6",
+"情":"cing4","價":"gaa3","指":"zi2","部":"bou6","由":"jau4",
+"起":"hei2","關":"gwaan1","樣":"joeng6","未":"mei6","解":"gaai2",
+"住":"zyu6","金":"gam1","天":"tin1","記":"gei3","再":"zoi3",
+"警":"ging2","內":"noi6","兩":"loeng5","合":"hap6","呢":"ne1",
+"呢":"nei1","呢":"ni1","連":"lin4","資":"zi1","道":"dou6",
+"啦":"laa1","報":"bou3","台":"toi4","樓":"lau4","放":"fong3",
+"影":"jying2","業":"jip6","即":"zik1","幾":"gei2","接":"zip3",
+"似":"ci5","感":"gam2","落":"lok6","上":"soeng5","受":"sau6",
+"認":"jing6","口":"hau2","死":"sei2","回":"wui4","完":"jyun4",
+"士":"si6","與":"jyu5","巴":"baa1","持":"ci4","通":"tung1",
+"被":"bei6","被":"pei5","升":"sing1","單":"daan1","該":"goi1",
+"直":"zik6","路":"lou6","支":"zi1","信":"seon3","星":"sing1",
+"特":"dak6","英":"jing1","原":"jyun4","馬":"maa5","望":"mong6",
+"元":"jyun4","選":"syun2","示":"si6","波":"bo1","題":"tai4",
+"男":"naam4","邊":"bin1","保":"bou2","第":"dai6","交":"gaau1",
+"體":"tai2","司":"si1","女":"neoi5","女":"neoi2","或":"waak6",
+"三":"saam1","算":"syun3","咗":"zo2","世":"sai3","們":"mun4",
+"仲":"zung6","股":"gu2","條":"tiu4","氣":"hei3","分":"fan1",
+"分":"fan6","物":"mat6","安":"on1","上":"soeng6","噉":"gam2",
+"代":"doi6","推":"teoi1","戰":"zin3","將":"zoeng1","將":"zoeng3",
+"件":"gin6","教":"gaau3","早":"zou2","班":"baan1","提":"tai4",
+"萬":"maan6","走":"zau2","任":"jam6","進":"zeon3","變":"bin3",
+"向":"hoeng3","求":"kau4","太":"taai3","緊":"gan2","約":"joek3",
+"立":"laap6","立":"lap6","生":"saang1","生":"sang1","常":"soeng4",
+"性":"sing3","投":"tau4","足":"zuk1","賽":"coi3","師":"si1",
+"區":"keoi1","西":"sai1","目":"muk6","色":"sik1","門":"mun4",
+"網":"mong5","正":"zing3","正":"zeng3","埋":"maai4","客":"haak3",
+"二":"ji6","別":"bit6","結":"git3","界":"gaai3","共":"gung6",
+"府":"fu2","打":"daa2","識":"sik1","間":"gaan1","間":"gaan3",
+"仔":"zai2","議":"ji5","周":"zau1","聯":"lyun4","首":"sau2",
+"基":"gei1","黎":"lai4","應":"jing1","應":"jing3","街":"gaai1",
+"叫":"giu3","留":"lau4","文":"man4","文":"man2","化":"faa3",
+"當":"dong1","當":"dong3","超":"ciu1","包":"baau1","令":"ling6",
+"張":"zoeng1","失":"sat1","論":"leon6","爆":"baau3","海":"hoi2",
+"非":"fei1","制":"zai3","片":"pin3","風":"fung1","晚":"maan5",
+"低":"dai1","少":"siu2","少":"siu3","喺":"hai2","白":"baak6",
+"運":"wan6","屋":"uk1","半":"bun3","快":"faai3","費":"fai3",
+"證":"zing3","母":"mou5","除":"ceoi4","建":"gin3","改":"goi2",
+"度":"dou6","度":"dok6","排":"paai4","佢":"keoi5","產":"caan2",
+"愛":"oi3","隻":"zek3","拍":"paak3","始":"ci2","底":"dai2",
+"跟":"gan1","角":"gok3","十":"sap6","灣":"waan1","沒":"mut6",
+"嚟":"lai4","嚟":"lei4","活":"wut6","醫":"ji1","亦":"jik6",
+"神":"san4","何":"ho4","玩":"waan2","玩":"wun6","東":"dung1",
+"總":"zung2","賣":"maai6","軍":"gwan1","視":"si6","細":"sai3",
+"夠":"gau3","哋":"dei6","離":"lei4","號":"hou6","斯":"si1",
+"陣":"zan6","格":"gaak3","案":"on3","更":"gang3","鐘":"zung1",
+"言":"jin4","清":"cing1","息":"sik1","四":"sei3","黑":"hak1",
+"黑":"haak1","花":"faa1","消":"siu1","權":"kyun4","務":"mou6",
+"也":"jaa5","局":"guk6","終":"zung1","希":"hei1","子":"zi2",
+"企":"kei5","決":"kyut3","品":"ban2","另":"ling6","取":"ceoi2",
+"貨":"fo3","式":"sik1","流":"lau4","知":"zi1","還":"waan4",
+"朋":"peng4","傷":"soeng1","整":"zing2","華":"waa4","商":"soeng1",
+"錢":"cin2","錢":"cin4","牌":"paai4","預":"jyu6","火":"fo2",
+"此":"ci2","長":"coeng4","長":"zoeng2","字":"zi6","歲":"seoi3",
+"搞":"gaau2","程":"cing4","拉":"laai1","空":"hung1","眼":"ngaan5",
+"龍":"lung4","光":"gwong1","嘢":"je5","笑":"siu3","治":"zi6",
+"山":"saan1","演":"jin2","呀":"aa4","從":"cung4","跌":"dit3",
+"例":"lai6","組":"zou2","幫":"bong1","裝":"zong1","紅":"hung4",
+"近":"gan6","近":"kan5","每":"mui5","根":"gan1","雖":"seoi1",
+"行":"haang4","派":"paai3","病":"beng6","姐":"ze2","查":"caa4",
+"繼":"gai3","值":"zik6","依":"ji1","團":"tyun4","專":"zyun1",
+"登":"dang1","擊":"gik1","熱":"jit6","票":"piu3","容":"jung4",
+"展":"zin2","據":"geoi3","並":"bing6","引":"jan5","社":"se5",
+"官":"gun1","隊":"deoi6","隊":"deoi2","服":"fuk6","院":"jyun2",
+"把":"baa2","五":"ng5","備":"bei6","重":"cung4","重":"cung5",
+"重":"zung6","達":"daat6","親":"can1","狗":"gau2","店":"dim3",
+"遊":"jau4","咪":"mai5","咪":"mai6","那":"naa5","步":"bou6",
+"亞":"aa3","照":"ziu3","下":"haa5","追":"zeoi1","考":"haau2",
+"季":"gwai3","觀":"gun1","平":"ping4","平":"peng4","功":"gung1",
+"錯":"co3","書":"syu1","架":"gaa3","防":"fong4","響":"hoeng2",
+"需":"seoi1","級":"kap1","較":"gaau3","王":"wong4","林":"lam4",
+"便":"bin6","讀":"duk6","銀":"ngan4","飛":"fei1","廣":"gwong2",
+"助":"zo6","標":"biu1","勢":"sai3","名":"ming4","俾":"bei2",
+"味":"mei6","齊":"cai4","殺":"saat3","必":"bit1","管":"gun2",
+"型":"jing4","環":"waan4","職":"zik1","圍":"wai4","設":"cit3",
+"準":"zeon2","質":"zat1","停":"ting4","科":"fo1","歌":"go1",
+"則":"zak1","北":"bak1","德":"dak1","舉":"geoi2","控":"hung3",
+"普":"pou2","眾":"zung3","送":"sung3","帶":"daai3","年":"nin4",
+"乜":"mat1","數":"sou2","數":"sou3","突":"dat6","兒":"ji4",
+"洗":"sai2","線":"sin3","南":"naam4","否":"fau2","節":"zit3",
+"咩":"me1","況":"fong3","護":"wu6","款":"fun2","諗":"nam2",
+"果":"gwo2","晒":"saai3","陳":"can4","油":"jau4","換":"wun6",
+"疑":"ji4","百":"baak3","減":"gaam2","轉":"zyun3","轉":"zyun2",
+"城":"sing4","深":"sam1","沙":"saa1","參":"caam1","導":"dou6",
+"劇":"kek6","哥":"go1","形":"jing4","洲":"zau1","返":"faan2",
+"返":"faan1","番":"faan1","思":"si1","估":"gu2","李":"lei5",
+"評":"ping4","輸":"syu1","圖":"tou4","增":"zang1","唱":"coeng3",
+"顯":"hin2","統":"tung2","料":"liu2","料":"liu6","酒":"zau2",
+"威":"wai1","音":"jam1","戲":"hei3","難":"naan4","難":"naan6",
+"故":"gu3","鐵":"tit3","六":"luk6","止":"zi2","席":"zik6",
+"救":"gau3","破":"po3","限":"haan6","際":"zai3","攻":"gung1",
+"維":"wai4","盤":"pun4","段":"dyun6","獨":"duk6","初":"co1",
+"越":"jyut6","版":"baan2","黃":"wong4","負":"fu6","義":"ji6",
+"牛":"ngau4","毒":"duk6","確":"kok3","陸":"luk6","層":"cang4",
+"強":"koeng4","尾":"mei5","份":"fan6","份":"fan2","藍":"laam4",
+"壓":"aat3","領":"ling5","領":"leng5","類":"leoi6","技":"gei6",
+"九":"gau2","練":"lin6","黨":"dong2","昨":"zok3","計":"gai3",
+"計":"gai2","米":"mai5","各":"gok3","候":"hau6","校":"haau6",
+"遠":"jyun5","炒":"caau2","態":"taai3","宣":"syun1","些":"se1",
+"極":"gik6","透":"tau3","血":"hyut3","雙":"soeng1","絲":"si1",
+"才":"coi4","套":"tou3","速":"cuk1","術":"seot6","石":"sek6",
+"介":"gaai3","拿":"naa4","站":"zaam6","腳":"goek3","執":"zap1",
+"絕":"zyut6","滿":"mun5","卡":"kaa1","卡":"kaat1","批":"pai1",
+"寫":"se2","碼":"maa5","迷":"mai4","朗":"long5","雞":"gai1",
+"羅":"lo4","牙":"ngaa4","屬":"suk6","律":"leot6","效":"haau6",
+"居":"geoi1","守":"sau2","復":"fuk6","尼":"nei4","嗰":"go2",
+"配":"pui3","像":"zoeng6","千":"cin1","且":"ce2","飯":"faan6",
+"澳":"ou3","腦":"nou5","餐":"caan1","注":"zyu3","射":"se6",
+"險":"him2","刻":"hak1","吸":"kap1","素":"sou3","短":"dyun2",
+"靚":"leng3","左":"zo2","私":"si1","貴":"gwai3","智":"zi3",
+"聽":"teng1","聽":"ting3","討":"tou2","古":"gu2","修":"sau1",
+"讓":"joeng6","播":"bo3","往":"wong5","退":"teoi3","驗":"jim6",
+"致":"zi3","舊":"gau6","試":"si3","試":"si5","招":"ziu1",
+"抽":"cau1","肉":"juk6","錄":"luk6","露":"lou6","免":"min5",
+"婚":"fan1","佬":"lou2","園":"jyun4","寶":"bou2","蘭":"laan4",
+"補":"bou2","抗":"kong3","境":"ging2","景":"ging2","慢":"maan6",
+"鍾":"zung1","罪":"zeoi6","現":"jin6","濟":"zai3","究":"gau3",
+"覺":"gok3","覺":"gaau3","飲":"jam2","印":"jan3","訴":"sou3",
+"紀":"gei2","責":"zaak3","傳":"cyun4","傳":"zyun2","傳":"zyun6",
+"辦":"baan6","鬼":"gwai2","訓":"fan3","謝":"ze6","察":"caat3",
+"拖":"to1","列":"lit6","要求":"jiu1 kau4","夜":"je6","置":"zi3",
+"毛":"mou4","貼":"tip3","判":"pun3","施":"si1","營":"jing4",
+"工作":"gung1 zok3","史":"si2","處":"cyu3","處":"cyu5","暴":"bou6",
+"禁":"gam3","亂":"lyun6","訊":"seon3","善":"sin6","歷":"lik6",
+"聲":"sing1","聲":"seng1","差":"caa1","阿":"aa3","稱":"cing1",
+"億":"jik1","粉":"fan2","署":"cyu5","易":"ji6","福":"fuk1",
+"父":"fu6","旅":"leoi5","嚴":"jim4","習":"zaap6","看":"hon3",
+"看":"hon1","承":"sing4","需要":"seoi1 jiu3","彩":"coi2","害":"hoi6",
+"語":"jyu5","財":"coi4","犯":"faan6","願":"jyun6","室":"sat1",
+"急":"gap1","若":"joek6","量":"loeng4","量":"loeng6","租":"zou1",
+"仍":"jing4","土":"tou2","具":"geoi6","衣":"ji1","勝":"sing3",
+"媽":"maa1","八":"baat3","源":"jyun4","踢":"tek3","堅":"gin1",
+"隔":"gaak3","簡":"gaan2","請":"ceng2","請":"cing2","肯":"hang2",
+"雲":"wan4","象":"zoeng6","座":"zo6","奧":"ou3","跑":"paau2",
+"富":"fu3","冷":"laang5","養":"joeng5","售":"sau6","京":"ging1",
+"輕":"hing1","右":"jau6","創":"cong3","倍":"pui5","扮":"baan6",
+"積":"zik1","存":"cyun4","肥":"fei4","答":"daap3","規":"kwai1",
+"房":"fong4","房":"fong2","痛":"tung3","幣":"bai6","課":"fo3",
+"協":"hip3","喜":"hei2","皇":"wong4","田":"tin4","疫":"jik6",
+"劃":"waak6","待":"doi6","決定":"kyut3 ding6","般":"bun1","廢":"fai3",
+"種":"zung2","種":"zung3","卻":"koek3","順":"seon6","囉":"lo1",
+"囉":"lo3","健":"gin6","庭":"ting4","怪":"gwaai3","抵":"dai2",
+"器":"hei3","宜":"ji4","康":"hong1","婆":"po4","輪":"leon4",
+"麻":"maa4","許":"heoi2","苦":"fu2","封":"fung1","豬":"zyu1",
+"鏡":"geng3","翻":"faan1","優":"jau1","賺":"zaan6","釋":"sik1",
+"假":"gaa2","假":"gaa3","然後":"jin4 hau6","代表":"doi6 biu2",
+"衝":"cung1","布":"bou3","另":"ling6","怕":"paa3","製":"zai3",
+"覆":"fuk1","樂":"lok6","媒":"mui4","永":"wing5","鬥":"dau3",
+"電話":"din6 waa2","跳":"tiu3","藥":"joek6","均":"gwan1","念":"nim6",
+"堂":"tong4","奶":"naai5","獎":"zoeng2","幅":"fuk1","靠":"kaau3",
+"全部":"cyun4 bou6","恐":"hung2","紙":"zi2","宗":"zung1","搶":"coeng2",
+"敗":"baai6","懷":"waai4","簽":"cim1","密":"mat6","激":"gik1",
+"醫生":"ji1 sang1","檢":"gim2","聖":"sing3","測":"caak1","測":"cak1",
+"益":"jik1","移":"ji4","按":"on3","垃":"laap6","顧":"gu3",
+"膠":"gaau1","休":"jau1","圾":"saap3","研":"jin4","育":"juk6",
+"棄":"hei3","硬":"ngaang6","委":"wai2","策":"caak3","當時":"dong1 si4",
+"燈":"dang1","京":"ging1","政治":"zing3 zi6","午":"ng5","捕":"bou6",
+"發展":"faat3 zin2","裁":"coi4","餘":"jyu4","遇":"jyu6","皮":"pei4",
+"皮":"pei2","過去":"gwo3 heoi3","生活":"sang1 wut6","地方":"dei6 fong1",
+"資料":"zi1 liu2","阻":"zo2","耐":"noi6","博":"bok3","島":"dou2",
+"項":"hong6","付":"fu6","避":"bei6","句":"geoi3","狀":"zong6",
+"童":"tung4","使":"si2","使":"sai2","使":"si3","部":"bou6",
+"但係":"daan6 hai6","嘉":"gaa1","須":"seoi1","額":"ngaak6","里":"lei5",
+"穩":"wan2","掛":"gwaa3","揾":"wan2","享":"hoeng2","拜":"baai3",
+"危":"ngai4","浪":"long6","投資":"tau4 zi1","志":"zi3","盃":"bui1",
+"戴":"daai3","準備":"zeon2 bei6","燒":"siu1","穿":"cyun1","曼":"maan6",
+"袋":"doi6","梁":"loeng4","甚":"sam6","任何":"jam6 ho4","主要":"zyu2 jiu3",
+"給":"kap1","勇":"jung5","驚":"ging1","驚":"geng1","趣":"ceoi3",
+"吧":"baa6","藝":"ngai6","借":"ze3","菜":"coi3","蚊":"man1",
+"搭":"daap3","直接":"zik6 zip3","睹":"dou2","呼":"fu1","迪":"dik6",
+"偷":"tau1","率":"leot2","率":"seot1","狂":"kwong4","零":"ling4",
+"兵":"bing1","頂":"ding2","頂":"deng2","七":"cat1","淨":"zing6",
+"淨":"zeng6","奴":"nou4","魔":"mo1","倫":"leon4","坐":"co5","坐":"zo6",
+"電影":"din6 jing2","審":"sam2","進行":"zeon3 hang4","良":"loeng4",
+"針":"zam1","靜":"zing6","雪":"syut3","材":"coi4","開心":"hoi1 sam1",
+"啊":"aa3","熟":"suk6","夢":"mung6","途":"tou4","仁":"jan4",
+"畢":"bat1","甲":"gaap3","弟":"dai6","木":"muk6","運動":"wan6 dung6",
+"正":"zing3","編":"pin1","祖":"zou2","旗":"kei4","嗎":"maa1",
+"嗎":"maa3","耳":"ji5","重要":"zung6 jiu3","充":"cung1","賓":"ban1",
+"調查":"diu6 caa4","拎":"ling1","舞":"mou5","族":"zuk6","撞":"zong6",
+"暗":"am3","筆":"bat1","迫":"bik1","靈":"ling4","靈":"leng5","劉":"lau4",
+"行":"hang4","行":"hong4","吹":"ceoi1","供":"gung1","供":"gung3",
+"仙":"sin1","板":"baan2","遲":"ci4","剛":"gong1","附":"fu6","惜":"sik1",
+"衫":"saam1","駛":"sai2","臨":"lam4","納":"naap6","找":"zaau2",
+"館":"gun2","州":"zau1","刀":"dou1","興":"hing1","興":"hing3",
+"迎":"jing4","幸":"hang6","鋒":"fung1","療":"liu4","村":"cyun1",
+"骨":"gwat1","微":"mei4","炸":"zaa3","援":"wun4","辛":"san1",
+"染":"jim5","陽":"joeng4","茶":"caa4","春":"ceon1","能力":"nang4 lik6",
+"討論":"tou2 leon6","航":"hong4","名":"meng2","煙":"jin1","章":"zoeng1",
+"操":"cou1","偉":"wai5","楚":"co2","着":"zoek6","着":"zoek3",
+"幕":"mok6","缺":"kyut3","晨":"san4","亡":"mong4","壞":"waai6",
+"誤":"ng6","廳":"teng1","恩":"jan1","安全":"on1 cyun4","異":"ji6",
+"兄":"hing1","標":"biu1","雨":"jyu5","曲":"kuk1","潮":"ciu4","衰":"seoi1",
+"擔心":"daam1 sam1","鬆":"sung1","自由":"zi6 jau4","採":"coi2","述":"seot6",
+"豆":"dau2","尊":"zyun1","畫":"waa2","畫":"waak6","佔":"zim3",
+"星期":"sing1 kei4","妹":"mui1","妹":"mui2","妹":"mui6","膽":"daam2",
+"銷":"siu1","麥":"mak6","一般":"jat1 bun1","索":"sok3","船":"syun4",
+"盟":"mang4","刺":"ci3","敵":"dik6","舖":"pou3","倉":"cong1","最好":"zeoi3 hou2",
+"青":"cing1","青":"ceng1","頓":"deon6","症":"zing3","摩":"mo1","拒":"keoi5",
+"彈":"daan2","彈":"daan6","彈":"taan4","雜":"zaap6","服務":"fuk6 mou6",
+"草":"cou2","絡":"lok3","主席":"zyu2 zik6","非常":"fei1 soeng4","壓力":"aat3 lik6",
+"歸":"gwai1","拆":"caak3","葉":"jip6","捐":"gyun1","震":"zan3","比賽":"bei2 coi3",
+"談":"taam4","手機":"sau2 gei1","已經":"ji5 ging1","酒店":"zau2 dim3","警察":"ging2 caat3",
+"映":"jing2","薪":"san1","雄":"hung4","熊":"hung4","綠":"luk6","每日":"mui5 jat6",
+"含":"ham4","帝":"dai3","勞":"lou4","增加":"zang1 gaa1","累":"leoi6","學校":"hok6 haau6",
+"麗":"lai6","屋企":"uk1 kei2","插":"caap3","央":"joeng1","濕":"sap1","旺":"wong6",
+"挑":"tiu1","節目":"zit3 muk6","觸":"zuk1","雷":"leoi4","面對":"min6 deoi3","髮":"faat3",
+"織":"zik1","誠":"sing4","叔":"suk1","乘":"sing4","江":"gong1","基本":"gei1 bun2",
+"對":"deoi3","祝":"zuk1","嘴":"zeoi2","夏":"haa6","忍":"jan2","使用":"si2 jung6",
+"爛":"laan6","醫院":"ji1 jyun2","公開":"gung1 hoi1","革":"gaak3","串":"cyun3","廠":"cong2",
+"冰":"bing1","吸":"kap1","縮":"suk1","是否":"si6 fau2","不同":"bat1 tung4","設計":"cit3 gai3",
+"岩":"ngaam4","漫":"maan6","屎":"si2","敏":"man5","吃":"hek3","湯":"tong1","溝":"kau1",
+"慶":"hing3","兼":"gim1","邊個":"bin1 go3","戀":"lyun2","擁":"jung2","敢":"gam2","逐":"zuk6",
+"鮮":"sin1","欣":"jan1","牆":"coeng4","炎":"jim4","折":"zit3","襲":"zaap6","探":"taam3",
+"融":"jung4","趕":"gon2","自然":"zi6 jin4","副":"fu3","肺":"fai3","姓":"sing3","截":"zit6",
+"遺":"wai4","秒":"miu5","小時":"siu2 si4","困":"kwan3","肯定":"hang2 ding6","烈":"lit6",
+"怕":"paa3","違":"wai4","陪":"pui4","詞":"ci4","珠":"zyu1","洋":"joeng4","伯":"baak3",
+"舒":"syu1","屈":"wat1","逃":"tou4","逼":"bik1","反對":"faan2 deoi3","久":"gau2","尖":"zim1",
+"孩":"haai4","偏":"pin1","證明":"zing3 ming4","距":"keoi5","魚":"jyu2","魚":"jyu4","障":"zoeng3",
+"身體":"san1 tai2","霸":"baa3","罩":"zaau3","掂":"dim3","掂":"dim6","簡單":"gaan2 daan1","切":"cit3",
+"切":"cai3","捉":"zuk1","哈":"haa1","監":"gaam1","監":"gaam3","鎖":"so2","賞":"soeng2",
+"如何":"jyu4 ho4","盈":"jing4","診":"can2","反應":"faan2 jing3","河":"ho4","意見":"ji3 gin3","楊":"joeng4",
+"艾":"ngaai6","某":"mau5","罰":"fat6","選舉":"syun2 geoi2","造":"zou6","造":"cou3","軟":"jyun5",
+"羣":"kwan4","奪":"dyut6","陪":"pui4","誕":"daan3","歷史":"lik6 si2","基金":"gei1 gam1","杜":"dou6",
+"生意":"saang1 ji3","了解":"liu5 gaai2","嫌":"jim4","即刻":"zik1 hak1","美元":"mei5 jyun4","認真":"jing6 zan1",
+"鞋":"haai4","行為":"hang4 wai4","加入":"gaa1 jap6","平均":"ping4 gwan1","範":"faan6","癡":"ci1",
+"電腦":"din6 nou5","菲":"fei1","莫":"mok6","健康":"gin6 hong1","變成":"bin3 sing4","變成":"bin3 seng4",
+"負責":"fu6 zaak3","最高":"zeoi3 gou1","遊戲":"jau4 hei3","努":"nou5","俄":"ngo4","宣傳":"syun1 cyun4",
+"乾":"gon1","樹":"syu6","妻":"cai1","家人":"gaa1 jan4","正式":"zing3 sik1","故事":"gu3 si6","圈":"hyun1",
+"文化":"man4 faa3","集團":"zaap6 tyun4","政策":"zing3 caak3","忙":"mong4","投訴":"tau4 sou3","屆":"gaai3","橋":"kiu4",
+"訪問":"fong2 man6","傳媒":"cyun4 mui4","司機":"si1 gei1","法國":"faat3 gwok3","巴士":"baa1 si2","經過":"ging1 gwo3",
+"報道":"bou3 dou6","褲":"fu3","爸":"baa1","解決":"gaai2 kyut3","罷":"baa6","階":"gaai1","結婚":"git3 fan1",
+"組織":"zou2 zik1","扣":"kau3","宮":"gung1","附近":"fu6 gan6","騎":"ke4","咸":"haam4","完成":"jyun4 sing4",
+"傻":"so4","提出":"tai4 ceot1","閒":"haan4","冠軍":"gun3 gwan1","價值":"gaa3 zik6","炮":"paau3","籌":"cau4",
+"郵":"jau4","冇":"mou5","平時":"ping4 si4","至少":"zi3 siu2","還有":"waan4 jau5","技術":"gei6 seot6",
+"竟然":"ging2 jin4","清楚":"cing1 co2","吉":"gat1","掃":"sou3","精神":"zing1 san4","尚":"soeng6","超過":"ciu1 gwo3",
+"揸":"zaa1","收入":"sau1 jap6","努力":"nou5 lik6","警員":"ging2 jyun4","掌":"zoeng2","混":"wan6","示威":"si6 wai1",
+"聽到":"teng1 dou2","讚":"zaan3","同樣":"tung4 joeng6","啟":"kai2","今晚":"gam1 maan5","董":"dung2","揚":"joeng4",
+"透過":"tau3 gwo3","內容":"noi6 jung4","替":"tai3","洛":"lok6","倒":"dou2","倒":"dou3","煮":"zyu2","鬧":"naau6",
+"高層":"gou1 cang4","農":"nung4","遊行":"jau4 hang4","琴":"kam4","頁":"jip6","壇":"taan4","朱":"zyu1",
+"批評":"pai1 ping4","參加":"caam1 gaa1","環境":"waan4 ging2","輝":"fai1","放棄":"fong3 hei3","教練":"gaau3 lin6","控制":"hung3 zai3",
+"風險":"fung1 him2","除":"ceoi4","除":"ceoi4","蛇":"se4","澳門":"ou3 mun2","對手":"deoi3 sau2","中央":"zung1 joeng1",
+"身份":"san1 fan2","聚":"zeoi6","瑞":"seoi6","旁":"pong4","精":"zing1","精":"zeng1","橫":"waang4","系統":"hai6 tung2",
+"槍":"coeng1","中學":"zung1 hok6","容易":"jung4 ji6","飛機":"fei1 gei1","可惜":"ho2 sik1","機場":"gei1 coeng4","日日":"jat6 jat6",
+"舉行":"geoi2 hang4","人員":"jan4 jyun4","港元":"gong2 jyun4","位置":"wai6 zi3","窮":"kung4","遊":"jau4","介紹":"gaai3 siu6",
+"詢":"seon1","堆":"deoi1","召":"ziu6","人生":"jan4 sang1","律師":"leot6 si1","男子":"naam4 zi2","澳洲":"ou3 zau1",
+"父母":"fu6 mou5","柏":"paak3","長期":"coeng4 kei4","足球":"zuk1 kau4","中場":"zung1 coeng4","慢慢":"maan6 maan2","寧":"ning4",
+"普通":"pou2 tung1","水平":"seoi2 ping4","渣":"zaa1","珍":"zan1","先生":"sin1 saang1","嫁":"gaa3","直播":"zik6 bo3",
+"爺":"je4","閉":"bai3","年代":"nin4 doi6","值得":"zik6 dak1","箱":"soeng1","小心":"siu2 sam1","杯":"bui1","煲":"bou1",
+"經驗":"ging1 jim6","蛋":"daan2","蛋":"daan6","添":"tim1","嬲":"nau1","成本":"sing4 bun2","戒":"gaai3","改善":"goi2 sin6",
+"灰":"fui1","喊":"haam3","臭":"cau3","野":"je5","蘋":"ping4","甜":"tim4","觀眾":"gun1 zung3","即時":"zik1 si4",
+"亞洲":"aa3 zau1","胸":"hung1","透露":"tau3 lou6","強調":"koeng4 diu6","餐廳":"caan1 teng1","空間":"hung1 gaan1","一半":"jat1 bun3",
+"成交":"sing4 gaau1","必須":"bit1 seoi1","保護":"bou2 wu6","老師":"lou5 si1","相關":"soeng1 gwaan1","忘":"mong4","揭":"kit3",
+"廈":"haa6","總共":"zung2 gung6","興趣":"hing3 ceoi3","免費":"min5 fai3","本地":"bun2 dei6","鼓":"gu2","好過":"hou2 gwo3",
+"明白":"ming4 baak6","同事":"tung4 si6","總統":"zung2 tung2","推介":"teoi1 gaai3","好多人":"hou2 do1 jan4","屋":"uk1","避":"bei6",
+"越":"jyut6","既":"gei3","即":"zik1","跟":"gan1","仲":"zung6","正":"zing3","啱":"ngaam1"
+};
+
+function getJyut6ping(char) {
+  return jyut6pingDict[char] || char;
+}
+
+function searchDictionary(query) {
+  if (!query || query.length < 1) return [];
+  const results = [];
+  const queryLower = query.toLowerCase();
+  for (const [char, pinyin] of Object.entries(jyut6pingDict)) {
+    // Match if pinyin starts with query (e.g., "ngo" matches "ngo5")
+    // or if character contains the query
+    if (pinyin.startsWith(queryLower) || char.includes(query)) {
+      results.push({ char, pinyin, matchType: pinyin.startsWith(queryLower) ? 'prefix' : 'contains' });
+    }
+  }
+  // Sort: prefix matches first, then by contains
+  results.sort((a, b) => {
+    if (a.matchType !== b.matchType) return a.matchType === 'prefix' ? -1 : 1;
+    return a.pinyin.localeCompare(b.pinyin);
+  });
+  return results.slice(0, 10);
+}
 
 let words = [];
 let uniqueChars = [];
@@ -66,7 +401,9 @@ const els = {
   pinyin: document.getElementById('pinyin'),
   writer: document.getElementById('writer'),
   streak: document.getElementById('streak'),
-  stats: document.getElementById('stats')
+  stats: document.getElementById('stats'),
+  dictPopup: document.getElementById('dictionaryPopup'),
+  langToggle: document.getElementById('langToggle')
 };
 
 function updateStreak(){
@@ -81,7 +418,7 @@ function updateStreak(){
 function saveProgress(){
   localStorage.setItem('hanziPracticeBuddy', JSON.stringify({
     words, uniqueChars, charIndex, streak, lastPracticeDate,
-    today:[...todaySet], allChars:[...allCharsSet]
+    today:[...todaySet], allChars:[...allCharsSet], langMode
   }));
 }
 
@@ -97,21 +434,22 @@ function restoreProgress(){
     lastPracticeDate = d.lastPracticeDate || null;
     todaySet = new Set(d.today || []);
     allCharsSet = new Set(d.allChars || []);
+    langMode = d.langMode || 'mandarin';
     els.wordList.value = words.join('\n');
-  els.streak.textContent = `\uD83D\uDD25 ${streak}`;
+    els.streak.textContent = `🔥 ${streak}`;
+    updateLangButton();
     updateStatsText();
   }catch(e){}
 }
 
 function loadWords(){
   let input = els.wordList.value.split('\n').map(w=>w.trim()).filter(Boolean);
-  input = [...new Set(input)]; // remove duplicate words
+  input = [...new Set(input)];
   els.wordList.value = input.join('\n');
   if(!input.length){ alert('Enter at least one word'); return; }
 
   words = input.map(w => converter(w));
 
-  // Build unique character list
   const charSet = new Set();
   words.forEach(w => w.split('').forEach(c => charSet.add(c)));
   uniqueChars = Array.from(charSet);
@@ -140,17 +478,37 @@ function loadFromURL(){
   els.wordList.value = list.join('\n');
 }
 
+function getTone(pinyin, mode) {
+  if (mode === 'cantonese') {
+    const match = pinyin.match(/[1-6]/);
+    return match ? parseInt(match[0]) : 5;
+  }
+  const match = pinyin.match(/[1-5]/);
+  return match ? parseInt(match[0]) : 5;
+}
+
 function showChar(){
   if(!uniqueChars[charIndex]) return;
   const char = uniqueChars[charIndex];
 
   updateStreak(); todaySet.add(char); allCharsSet.add(char);
   els.char.textContent = char;
+  
   try{
-    const pyNum = pinyinPro.pinyin(char,{toneType:'num'});
-    const tone = parseInt(pyNum.match(/[1-5]/)?.[0] || 5);
-    els.char.style.color = toneColors[tone];
-    els.pinyin.textContent = pinyinPro.pinyin(char,{toneType:'symbol'});
+    let py, tone;
+    if (langMode === 'cantonese') {
+      py = getJyut6ping(char);
+      tone = getTone(py, 'cantonese');
+    } else {
+      py = pinyinPro.pinyin(char,{toneType:'num'});
+      tone = getTone(py, 'mandarin');
+    }
+    els.char.style.color = toneColors[tone] || toneColors[5];
+    if (langMode === 'cantonese') {
+      els.pinyin.textContent = py;
+    } else {
+      els.pinyin.textContent = pinyinPro.pinyin(char,{toneType:'symbol'});
+    }
   }catch(e){ els.pinyin.textContent=''; }
 
   els.writer.innerHTML='';
@@ -204,7 +562,6 @@ function importWords(){
         words = [...new Set(data.words || [])];
         els.wordList.value = words.join('\n');
 
-        // rebuild unique characters
         const charSet = new Set();
         words.forEach(w => w.split('').forEach(c => charSet.add(c)));
         uniqueChars = Array.from(charSet);
@@ -240,13 +597,62 @@ function generatePDF(){
         doc.text(char, x + col*boxSize + 6, y + row*boxSize + 18);
       }
     }
-    const py = pinyinPro.pinyin(char,{toneType:'symbol'});
+    let py;
+    if (langMode === 'cantonese') {
+      py = getJyut6ping(char);
+    } else {
+      py = pinyinPro.pinyin(char,{toneType:'symbol'});
+    }
     doc.setFontSize(12);
     doc.text(py, x + (gridPerChar*boxSize)/2, y + gridPerChar*boxSize + 5, {align:'center'});
     y += gridPerChar*boxSize + 15;
     if(y + gridPerChar*boxSize + 15 > pageHeight - margin){ doc.addPage(); y=margin; }
   });
   doc.save('hanzi-practice-buddy-worksheet.pdf');
+}
+
+// ===== LANGUAGE TOGGLE =====
+function toggleLanguage() {
+  langMode = langMode === 'mandarin' ? 'cantonese' : 'mandarin';
+  updateLangButton();
+  saveProgress();
+  if (uniqueChars.length > 0) {
+    showChar();
+  }
+}
+
+function updateLangButton() {
+  els.langToggle.textContent = langMode === 'mandarin' ? '普通话' : '粵語';
+}
+
+// ===== DICTIONARY POPUP =====
+function showDictionaryPopup(query) {
+  if (langMode !== 'cantonese' || !query) {
+    els.dictPopup.style.display = 'none';
+    return;
+  }
+  
+  const results = searchDictionary(query);
+  if (results.length === 0) {
+    els.dictPopup.style.display = 'none';
+    return;
+  }
+  
+  els.dictPopup.innerHTML = results.map(r => 
+    `<div class="dict-item" onclick="insertDictWord('${r.char}')">
+      <span class="dict-char">${r.char}</span>
+      <span class="dict-pinyin">${r.pinyin}</span>
+    </div>`
+  ).join('');
+  els.dictPopup.style.display = 'block';
+}
+
+function insertDictWord(word) {
+  const pos = els.wordList.selectionStart;
+  const text = els.wordList.value;
+  els.wordList.value = text.slice(0, pos) + word + text.slice(pos);
+  els.dictPopup.style.display = 'none';
+  els.wordList.focus();
 }
 
 // ===== EVENT LISTENERS =====
@@ -259,9 +665,19 @@ document.getElementById('exportBtn').onclick = exportWords;
 document.getElementById('importBtn').onclick = importWords;
 document.getElementById('pdfBtn').onclick = generatePDF;
 document.getElementById('gamesBtn').onclick = ()=>alert('Games coming soon: Big2, Chinese Chess');
+document.getElementById('langToggle').onclick = toggleLanguage;
+
+els.wordList.addEventListener('input', (e) => {
+  if (langMode === 'cantonese') {
+    const text = e.target.value;
+    // Get the last word/characters typed (up to 5 characters for pinyin matching)
+    const lastSpaceIndex = text.lastIndexOf('\n');
+    const lastWord = lastSpaceIndex >= 0 ? text.slice(lastSpaceIndex + 1) : text;
+    showDictionaryPopup(lastWord);
+  }
+});
 
 document.addEventListener('DOMContentLoaded',()=>{ loadFromURL(); restoreProgress(); });
 </script>
 </body>
 </html>
-

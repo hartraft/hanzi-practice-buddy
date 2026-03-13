@@ -6,13 +6,15 @@ object ToneColors {
     val tone3 = 0xFF007AFF.toInt()
     val tone4 = 0xFF9C27B0.toInt()
     val tone5 = 0xFF9E9E9E.toInt()
+    val tone6 = 0xFFFF9500.toInt()
 
     val colors = mapOf(
         1 to tone1,
         2 to tone2,
         3 to tone3,
         4 to tone4,
-        5 to tone5
+        5 to tone5,
+        6 to tone6
     )
 
     fun getColorHex(tone: Int): Int = colors[tone] ?: tone5

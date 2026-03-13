@@ -116,7 +116,7 @@ fun HanziPracticeApp() {
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    text = "🔥 $streak",
+                    text = "\uD83D\uDD25 $streak",
                     fontSize = 24.sp,
                     fontWeight = FontWeight.Bold
                 )

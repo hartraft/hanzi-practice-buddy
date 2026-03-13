@@ -28,8 +28,8 @@ button { margin:5px; padding:10px 14px; font-size:16px; cursor:pointer; }
 <body>
 
 <h2>hanzi-practice-buddy</h2>
-<div id="streak">🔥 0</div>
-<button id="darkToggle">🌙 / ☀️</button>
+<div id="streak">&#128293; 0</div>
+<button id="darkToggle">&#127769; / &#9728;</button>
 
 <textarea id="wordList" placeholder="Enter words, one per line"></textarea><br>
 <button id="loadBtn">Load</button>
@@ -98,7 +98,7 @@ function restoreProgress(){
     todaySet = new Set(d.today || []);
     allCharsSet = new Set(d.allChars || []);
     els.wordList.value = words.join('\n');
-    els.streak.textContent = `🔥 ${streak}`;
+  els.streak.textContent = `\uD83D\uDD25 ${streak}`;
     updateStatsText();
   }catch(e){}
 }

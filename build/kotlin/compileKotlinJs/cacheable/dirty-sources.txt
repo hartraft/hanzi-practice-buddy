@@ -1,4 +1,0 @@
-/home/hartraft/git/hanzi-practice-buddy/src/jsMain/kotlin/com/hartraft/hanzipracticebuddy/Main.kt
-/home/hartraft/git/hanzi-practice-buddy/src/commonMain/kotlin/com/hartraft/hanzipracticebuddy/ui/HanziPracticeApp.kt
-/home/hartraft/git/hanzi-practice-buddy/src/commonMain/kotlin/com/hartraft/hanzipracticebuddy/ui/theme/Theme.kt
-/home/hartraft/git/hanzi-practice-buddy/src/commonMain/kotlin/com/hartraft/models/Hanzi.kt

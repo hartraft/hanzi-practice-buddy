@@ -1,0 +1,10 @@
+abi_version=1.8.0
+builtins_platform=JS
+compiler_version=2.0.21
+depends=org.jetbrains.kotlinx\:kotlinx-serialization-json org.jetbrains.compose.material3\:material3 org.jetbrains.compose.material\:material-ripple org.jetbrains.compose.foundation\:foundation org.jetbrains.compose.animation\:animation org.jetbrains.compose.material\:material-icons-core org.jetbrains.compose.foundation\:foundation-layout org.jetbrains.compose.ui\:ui org.jetbrains.compose.runtime\:runtime-saveable org.jetbrains.compose.runtime\:runtime components.resources\:library org.jetbrains.kotlinx\:kotlinx-serialization-core org.jetbrains.compose.ui\:ui-text org.jetbrains.compose.ui\:ui-graphics org.jetbrains.compose.ui\:ui-unit org.jetbrains.compose.ui\:ui-geometry org.jetbrains.compose.ui\:ui-util org.jetbrains.skiko\:skiko org.jetbrains.compose.animation\:animation-core org.jetbrains.kotlinx\:kotlinx-coroutines-core org.jetbrains.kotlinx\:atomicfu org.jetbrains.kotlin\:kotlin-dom-api-compat kotlin
+ir_signature_versions=1,2
+jsOutputName=hanzi-practice-buddy
+metadata_version=1.4.1
+serializedIrFileFingerprints=344j7qk17235l.qzdjws5ok9w0 b9s2xh5e2ui4.ksqaxthtvq7 3ed6kniabli2j.2i5wgzvor0ulg 3f1rq34y0oxb1.19l5foxvv5455 23gd9y06tnuj7.2x8e0bi4j6tcg
+serializedKlibFingerprint=3f0op6pb63fro.j8ug3wa4kmgo
+unique_name=com.hartraft\:hanzi-practice-buddy

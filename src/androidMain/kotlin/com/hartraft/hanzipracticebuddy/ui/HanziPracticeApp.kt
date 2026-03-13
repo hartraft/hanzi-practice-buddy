@@ -11,6 +11,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.hartraft.hanzipracticebuddy.ToneColors
+import com.hartraft.hanzipracticebuddy.getTone
 import com.hartraft.hanzipracticebuddy.ui.theme.HanziPracticeBuddyTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -30,19 +32,15 @@ fun HanziPracticeApp() {
     var allChars by remember { mutableStateOf<Set<String>>(emptySet()) }
 
     val toneColors = mapOf(
-        1 to androidx.compose.ui.graphics.Color(0xFF007AFF),
-        2 to androidx.compose.ui.graphics.Color(0xFF34C759),
-        3 to androidx.compose.ui.graphics.Color(0xFFFF9500),
-        4 to androidx.compose.ui.graphics.Color(0xFFFF3B30),
-        5 to androidx.compose.ui.graphics.Color(0xFF8E8E93)
+        1 to androidx.compose.ui.graphics.Color(ToneColors.tone1),
+        2 to androidx.compose.ui.graphics.Color(ToneColors.tone2),
+        3 to androidx.compose.ui.graphics.Color(ToneColors.tone3),
+        4 to androidx.compose.ui.graphics.Color(ToneColors.tone4),
+        5 to androidx.compose.ui.graphics.Color(ToneColors.tone5)
     )
 
     fun getPinyin(char: String): String {
         return PinyinLookup.pinyin(char)
-    }
-
-    fun getTone(pinyin: String): Int {
-        return pinyin.mapNotNull { it.digitToIntOrNull() }.firstOrNull() ?: 5
     }
 
     fun loadWords() {

@@ -2001,10 +2001,27 @@ object Jyut6pingLookup {
         return jyut6pingMap[char] ?: char
     }
 
-    fun searchCandidates(query: String): List<Pair<String, String>> {
+    data class SearchResult(
+        val char: String,
+        val pinyin: String,
+        val isPrefixMatch: Boolean
+    )
+
+    fun searchCandidates(query: String): List<SearchResult> {
         if (query.isEmpty()) return emptyList()
-        return jyut6pingMap.filter { (char, pinyin) ->
-            char.contains(query) || pinyin.startsWith(query)
-        }.map { it.key to it.value }.take(20)
+        val results = jyut6pingMap.filter { (char, pinyin) ->
+            pinyin.startsWith(query) || char.contains(query)
+        }.map { (char, pinyin) ->
+            SearchResult(
+                char = char,
+                pinyin = pinyin,
+                isPrefixMatch = pinyin.startsWith(query)
+            )
+        }
+        
+        return results.sortedWith(
+            compareByDescending<SearchResult> { it.isPrefixMatch }
+                .thenBy { it.pinyin }
+        ).take(10)
     }
 }

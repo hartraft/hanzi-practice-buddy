@@ -650,9 +650,46 @@ function showDictionaryPopup(query) {
 function insertDictWord(word) {
   const pos = els.wordList.selectionStart;
   const text = els.wordList.value;
-  els.wordList.value = text.slice(0, pos) + word + text.slice(pos);
-  els.dictPopup.style.display = 'none';
+  
+  // Find the start of the current pinyin (look back from cursor for non-Chinese characters)
+  let start = pos;
+  while (start > 0) {
+    const char = text[start - 1];
+    // Stop if we hit a Chinese character or newline (start of a new word)
+    if (/[\u4e00-\u9fff]/.test(char) || char === '\n') {
+      break;
+    }
+    start--;
+  }
+  
+  // Replace the pinyin with the selected character
+  const newText = text.slice(0, start) + word + text.slice(pos);
+  els.wordList.value = newText;
+  
+  // Position cursor after the inserted character
+  const newPos = start + word.length;
+  els.wordList.setSelectionRange(newPos, newPos);
   els.wordList.focus();
+  
+  // Trigger popup for next input after a brief delay
+  setTimeout(() => {
+    const currentText = els.wordList.value;
+    const cursorPos = els.wordList.selectionStart;
+    
+    // Find the pinyin after the last newline or Chinese character
+    let pinyinStart = cursorPos;
+    while (pinyinStart < currentText.length) {
+      const char = currentText[pinyinStart];
+      if (/[\u4e00-\u9fff]/.test(char) || char === '\n') {
+        break;
+      }
+      pinyinStart++;
+    }
+    
+    const lastNewline = currentText.lastIndexOf('\n', cursorPos - 1);
+    const lastWord = lastNewline >= 0 ? currentText.slice(lastNewline + 1, cursorPos) : currentText.slice(0, cursorPos);
+    showDictionaryPopup(lastWord);
+  }, 10);
 }
 
 // ===== EVENT LISTENERS =====

@@ -26,8 +26,7 @@ enum class LanguageMode { MANDARIN, CANTONESE }
 @Composable
 fun HanziPracticeApp() {
     var isDarkMode by remember { mutableStateOf(false) }
-    var wordsText by remember { mutableStateOf("") }
-    var words by remember { mutableStateOf<List<String>>(emptyList()) }
+    var wordsTextFieldValue by remember { mutableStateOf(androidx.compose.ui.text.input.TextFieldValue("")) }
     var uniqueChars by remember { mutableStateOf<List<String>>(emptyList()) }
     var currentCharIndex by remember { mutableIntStateOf(0) }
     var currentChar by remember { mutableStateOf<String?>(null) }
@@ -38,9 +37,14 @@ fun HanziPracticeApp() {
     var showCompletionMessage by remember { mutableStateOf(false) }
     var allChars by remember { mutableStateOf<Set<String>>(emptySet()) }
     var languageMode by remember { mutableStateOf(LanguageMode.MANDARIN) }
-    var showDictionaryPopup by remember { mutableStateOf(false) }
     var dictionaryQuery by remember { mutableStateOf("") }
-    var dictionaryCandidates by remember { mutableStateOf<List<Pair<String, String>>>(emptyList()) }
+    var dictionaryCandidates by remember { mutableStateOf<List<Jyut6pingLookup.SearchResult>>(emptyList()) }
+    var inputStartPosition by remember { mutableIntStateOf(0) }
+
+    val wordsText: String
+        get() = wordsTextFieldValue.text
+    
+    var words by remember { mutableStateOf<List<String>>(emptyList()) }
 
     val toneColors = mapOf(
         1 to androidx.compose.ui.graphics.Color(ToneColors.tone1),
@@ -58,14 +62,48 @@ fun HanziPracticeApp() {
         }
     }
 
-    fun updateDictionaryCandidates(query: String) {
-        dictionaryQuery = query
-        dictionaryCandidates = Jyut6pingLookup.searchCandidates(query)
+    fun updateDictionaryCandidates(text: String, cursorPosition: Int) {
+        // Find the start of the current word (after last newline)
+        val lastNewline = text.lastIndexOf('\n', cursorPosition - 1)
+        val currentWord = if (lastNewline >= 0) {
+            text.substring(lastNewline + 1, cursorPosition)
+        } else {
+            text.substring(0, cursorPosition)
+        }
+        
+        dictionaryQuery = currentWord
+        inputStartPosition = if (lastNewline >= 0) lastNewline + 1 else 0
+        dictionaryCandidates = Jyut6pingLookup.searchCandidates(currentWord)
     }
 
-    fun insertWord(word: String) {
-        wordsText = if (wordsText.isEmpty()) word else "$wordsText\n$word"
-        showDictionaryPopup = false
+    fun insertWord(selectedChar: String) {
+        val currentText = wordsTextFieldValue.text
+        val cursorPos = wordsTextFieldValue.selection.start
+        
+        // Find the start of the current pinyin (look back from cursor for non-Chinese characters)
+        var start = cursorPos
+        while (start > 0) {
+            val char = currentText[start - 1]
+            // Stop if we hit a Chinese character or newline (start of a new word)
+            if (char.code in 0x4E00..0x9FFF || char == '\n') {
+                break
+            }
+            start--
+        }
+        
+        // Replace the pinyin with the selected character
+        val before = currentText.substring(0, start)
+        val after = currentText.substring(cursorPos)
+        val newText = before + selectedChar + after
+        
+        // Update cursor position after the inserted character
+        val newCursorPos = start + selectedChar.length
+        wordsTextFieldValue = androidx.compose.ui.text.input.TextFieldValue(
+            text = newText,
+            selection = androidx.compose.ui.text.TextRange(newCursorPos)
+        )
+        
+        dictionaryCandidates = emptyList()
         dictionaryQuery = ""
     }
 
@@ -153,11 +191,11 @@ fun HanziPracticeApp() {
                 Spacer(modifier = Modifier.height(16.dp))
 
                 OutlinedTextField(
-                    value = wordsText,
-                    onValueChange = { 
-                        wordsText = it
+                    value = wordsTextFieldValue,
+                    onValueChange = { newValue ->
+                        wordsTextFieldValue = newValue
                         if (languageMode == LanguageMode.CANTONESE) {
-                            updateDictionaryCandidates(it.takeLast(10))
+                            updateDictionaryCandidates(newValue.text, newValue.selection.start)
                         }
                     },
                     modifier = Modifier
@@ -176,16 +214,16 @@ fun HanziPracticeApp() {
                         LazyColumn(
                             modifier = Modifier.heightIn(max = 150.dp)
                         ) {
-                            items(dictionaryCandidates) { (char, pinyin) ->
+                            items(dictionaryCandidates) { result ->
                                 Row(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .clickable { insertWord(char) }
+                                        .clickable { insertWord(result.char) }
                                         .padding(8.dp),
                                     horizontalArrangement = Arrangement.SpaceBetween
                                 ) {
-                                    Text(char, fontWeight = FontWeight.Bold)
-                                    Text(pinyin, color = MaterialTheme.colorScheme.secondary)
+                                    Text(result.char, fontWeight = FontWeight.Bold)
+                                    Text(result.pinyin, color = MaterialTheme.colorScheme.secondary)
                                 }
                             }
                         }

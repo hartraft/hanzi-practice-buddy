@@ -458,7 +458,11 @@ function loadWords(){
   words = input.map(w => converter(w));
 
   const charSet = new Set();
-  words.forEach(w => w.split('').forEach(c => charSet.add(c)));
+  words.forEach(w => w.split('').forEach(c => {
+    if (c.codePointAt(0) >= 0x4E00 && c.codePointAt(0) <= 0x9FFF) {
+      charSet.add(c);
+    }
+  }));
   uniqueChars = Array.from(charSet);
 
   charIndex = 0;
@@ -578,7 +582,11 @@ function importWords(){
         els.wordList.value = words.join('\n');
 
         const charSet = new Set();
-        words.forEach(w => w.split('').forEach(c => charSet.add(c)));
+        words.forEach(w => w.split('').forEach(c => {
+          if (c.codePointAt(0) >= 0x4E00 && c.codePointAt(0) <= 0x9FFF) {
+            charSet.add(c);
+          }
+        }));
         uniqueChars = Array.from(charSet);
 
         charIndex = 0;

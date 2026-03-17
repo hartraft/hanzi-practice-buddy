@@ -127,7 +127,12 @@ fun HanziPracticeApp() {
         
         val charSet = mutableSetOf<String>()
         words.forEach { word ->
-            word.forEach { charSet.add(it.toString()) }
+            word.forEach { char ->
+                val codePoint = char.code
+                if (codePoint in 0x4E00..0x9FFF) {
+                    charSet.add(char.toString())
+                }
+            }
         }
         
         uniqueChars = charSet.toList()

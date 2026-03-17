@@ -19,7 +19,9 @@ body.dark { background:#000; color:#fff; }
 textarea { width:100%; height:120px; margin-bottom:5px; }
 #writer { width:300px; height:300px; margin:15px auto; border:1px solid #ccc; }
 #char { font-size:56px; margin-top:10px; }
-#pinyin { font-size:18px; margin-bottom:5px; }
+#pinyin-container { display:flex; justify-content:center; gap:20px; margin-bottom:5px; }
+#pinyin-mandarin, #pinyin-cantonese { font-size:18px; }
+#pinyin-label { font-size:12px; opacity:0.7; margin-right:4px; }
 #stats { font-size:14px; margin-top:5px; font-style:italic; white-space: pre-line; }
 button { margin:5px; padding:10px 14px; font-size:16px; cursor:pointer; }
 #streak { font-size:22px; margin:8px; }
@@ -60,7 +62,10 @@ body.dark #dictionaryPopup .dict-pinyin { color:#aaa; }
 <p><em>Future games: Big2, Chinese Chess</em></p>
 
 <div id="char"></div>
-<div id="pinyin"></div>
+<div id="pinyin-container">
+  <div id="pinyin-mandarin"></div>
+  <div id="pinyin-cantonese"></div>
+</div>
 <div id="writer"></div>
 <div id="stats"></div>
 
@@ -399,6 +404,8 @@ const els = {
   wordList: document.getElementById('wordList'),
   char: document.getElementById('char'),
   pinyin: document.getElementById('pinyin'),
+  pinyinMandarin: document.getElementById('pinyin-mandarin'),
+  pinyinCantonese: document.getElementById('pinyin-cantonese'),
   writer: document.getElementById('writer'),
   streak: document.getElementById('streak'),
   stats: document.getElementById('stats'),
@@ -458,7 +465,8 @@ function loadWords(){
   uniqueChars.forEach(c => allCharsSet.add(c));
 
   els.char.textContent = '';
-  els.pinyin.textContent = '';
+  els.pinyinMandarin.textContent = '';
+  els.pinyinCantonese.textContent = '';
   els.writer.innerHTML = '';
 
   showChar();
@@ -495,21 +503,29 @@ function showChar(){
   els.char.textContent = char;
   
   try{
-    let py, tone;
-    if (langMode === 'cantonese') {
-      py = getJyut6ping(char);
-      tone = getTone(py, 'cantonese');
-    } else {
-      py = pinyinPro.pinyin(char,{toneType:'num'});
-      tone = getTone(py, 'mandarin');
-    }
-    els.char.style.color = toneColors[tone] || toneColors[5];
-    if (langMode === 'cantonese') {
-      els.pinyin.textContent = py;
-    } else {
-      els.pinyin.textContent = pinyinPro.pinyin(char,{toneType:'symbol'});
-    }
-  }catch(e){ els.pinyin.textContent=''; }
+    // Get Mandarin pinyin
+    const mandarinPy = pinyinPro.pinyin(char,{toneType:'num'});
+    const mandarinTone = getTone(mandarinPy, 'mandarin');
+    const mandarinPySymbol = pinyinPro.pinyin(char,{toneType:'symbol'});
+    
+    // Get Cantonese jyutping
+    const cantonesePy = getJyut6ping(char);
+    const cantoneseTone = getTone(cantonesePy, 'cantonese');
+    
+    // Color the character with the current language mode tone color
+    const currentTone = langMode === 'cantonese' ? cantoneseTone : mandarinTone;
+    els.char.style.color = toneColors[currentTone] || toneColors[5];
+    
+    // Display both pronunciations side by side with tone colors
+    // Mandarin: shown in blue-ish tones (Pleco style)
+    const mandarinSpan = `<span id="pinyin-label">普:</span><span style="color:${toneColors[mandarinTone] || toneColors[5]}">${mandarinPySymbol}</span>`;
+    const cantoneseSpan = `<span id="pinyin-label">粵:</span><span style="color:${toneColors[cantoneseTone] || toneColors[5]}">${cantonesePy}</span>`;
+    els.pinyinMandarin.innerHTML = mandarinSpan;
+    els.pinyinCantonese.innerHTML = cantoneseSpan;
+  }catch(e){ 
+    els.pinyinMandarin.textContent = '';
+    els.pinyinCantonese.textContent = '';
+  }
 
   els.writer.innerHTML='';
   writer = HanziWriter.create('writer', char, { width:300, height:300, showOutline:true, showCharacter:false });
@@ -538,7 +554,7 @@ function finishList(){
   msg.style.border='2px solid green'; msg.style.borderRadius='10px'; msg.style.zIndex='1000';
   document.body.appendChild(msg);
   setTimeout(()=>document.body.removeChild(msg),3000);
-  els.char.textContent=''; els.pinyin.textContent=''; els.writer.innerHTML='';
+  els.char.textContent=''; els.pinyinMandarin.textContent=''; els.pinyinCantonese.textContent=''; els.writer.innerHTML='';
 }
 
 function updateStatsText(){
@@ -597,13 +613,10 @@ function generatePDF(){
         doc.text(char, x + col*boxSize + 6, y + row*boxSize + 18);
       }
     }
-    let py;
-    if (langMode === 'cantonese') {
-      py = getJyut6ping(char);
-    } else {
-      py = pinyinPro.pinyin(char,{toneType:'symbol'});
-    }
-    doc.setFontSize(12);
+    const mandarinPy = pinyinPro.pinyin(char,{toneType:'symbol'});
+    const cantonesePy = getJyut6ping(char);
+    const py = `${mandarinPy} | ${cantonesePy}`;
+    doc.setFontSize(10);
     doc.text(py, x + (gridPerChar*boxSize)/2, y + gridPerChar*boxSize + 5, {align:'center'});
     y += gridPerChar*boxSize + 15;
     if(y + gridPerChar*boxSize + 15 > pageHeight - margin){ doc.addPage(); y=margin; }

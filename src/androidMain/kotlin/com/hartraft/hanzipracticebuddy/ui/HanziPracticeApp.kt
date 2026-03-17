@@ -30,7 +30,8 @@ fun HanziPracticeApp() {
     var uniqueChars by remember { mutableStateOf<List<String>>(emptyList()) }
     var currentCharIndex by remember { mutableIntStateOf(0) }
     var currentChar by remember { mutableStateOf<String?>(null) }
-    var currentPinyin by remember { mutableStateOf("") }
+    var currentMandarinPinyin by remember { mutableStateOf("") }
+    var currentCantoneseJyutping by remember { mutableStateOf("") }
     var streak by remember { mutableIntStateOf(0) }
     var todayPracticed by remember { mutableStateOf<Set<String>>(emptySet()) }
     var totalLearned by remember { mutableIntStateOf(0) }
@@ -53,6 +54,14 @@ fun HanziPracticeApp() {
         5 to androidx.compose.ui.graphics.Color(ToneColors.tone5),
         6 to androidx.compose.ui.graphics.Color(ToneColors.tone6)
     )
+
+    fun getMandarinPinyin(char: String): String {
+        return PinyinLookup.pinyin(char)
+    }
+
+    fun getCantoneseJyutping(char: String): String {
+        return Jyut6pingLookup.jyut6ping(char)
+    }
 
     fun getPinyin(char: String): String {
         return when (languageMode) {
@@ -127,7 +136,8 @@ fun HanziPracticeApp() {
         
         if (uniqueChars.isNotEmpty()) {
             currentChar = uniqueChars[0]
-            currentPinyin = getPinyin(currentChar!!)
+            currentMandarinPinyin = getMandarinPinyin(currentChar!!)
+            currentCantoneseJyutping = getCantoneseJyutping(currentChar!!)
             todayPracticed = todayPracticed + currentChar!!
             totalLearned = allChars.size
         }
@@ -137,12 +147,14 @@ fun HanziPracticeApp() {
         if (currentCharIndex >= uniqueChars.size - 1) {
             showCompletionMessage = true
             currentChar = null
-            currentPinyin = ""
+            currentMandarinPinyin = ""
+            currentCantoneseJyutping = ""
             return
         }
         currentCharIndex++
         currentChar = uniqueChars[currentCharIndex]
-        currentPinyin = getPinyin(currentChar!!)
+        currentMandarinPinyin = getMandarinPinyin(currentChar!!)
+        currentCantoneseJyutping = getCantoneseJyutping(currentChar!!)
         todayPracticed = todayPracticed + currentChar!!
         allChars = allChars + currentChar!!
         totalLearned = allChars.size
@@ -152,7 +164,8 @@ fun HanziPracticeApp() {
         if (currentCharIndex > 0) {
             currentCharIndex--
             currentChar = uniqueChars[currentCharIndex]
-            currentPinyin = getPinyin(currentChar!!)
+            currentMandarinPinyin = getMandarinPinyin(currentChar!!)
+            currentCantoneseJyutping = getCantoneseJyutping(currentChar!!)
         }
     }
 
@@ -243,8 +256,13 @@ fun HanziPracticeApp() {
                 Spacer(modifier = Modifier.height(24.dp))
 
                 currentChar?.let { char ->
-                    val tone = getTone(currentPinyin)
-                    val charColor = toneColors[tone] ?: MaterialTheme.colorScheme.primary
+                    val mandarinTone = getTone(currentMandarinPinyin)
+                    val cantoneseTone = getTone(currentCantoneseJyutping)
+                    val charColor = if (languageMode == LanguageMode.CANTONESE) {
+                        toneColors[cantoneseTone] ?: MaterialTheme.colorScheme.primary
+                    } else {
+                        toneColors[mandarinTone] ?: MaterialTheme.colorScheme.primary
+                    }
                     
                     Text(
                         text = char,
@@ -261,11 +279,35 @@ fun HanziPracticeApp() {
 
                     Spacer(modifier = Modifier.height(8.dp))
 
-                    Text(
-                        text = currentPinyin,
-                        fontSize = 20.sp,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceEvenly
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(
+                                text = "普",
+                                fontSize = 12.sp,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                            )
+                            Text(
+                                text = currentMandarinPinyin,
+                                fontSize = 20.sp,
+                                color = toneColors[mandarinTone] ?: MaterialTheme.colorScheme.primary
+                            )
+                        }
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(
+                                text = "粵",
+                                fontSize = 12.sp,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                            )
+                            Text(
+                                text = currentCantoneseJyutping,
+                                fontSize = 20.sp,
+                                color = toneColors[cantoneseTone] ?: MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))

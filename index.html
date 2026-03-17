@@ -512,9 +512,8 @@ function showChar(){
     const cantonesePy = getJyut6ping(char);
     const cantoneseTone = getTone(cantonesePy, 'cantonese');
     
-    // Color the character with the current language mode tone color
-    const currentTone = langMode === 'cantonese' ? cantoneseTone : mandarinTone;
-    els.char.style.color = toneColors[currentTone] || toneColors[5];
+    // Color the character with the Mandarin pinyin tone color
+    els.char.style.color = toneColors[mandarinTone] || toneColors[5];
     
     // Display both pronunciations side by side with tone colors
     // Mandarin: shown in blue-ish tones (Pleco style)

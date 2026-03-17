@@ -258,11 +258,7 @@ fun HanziPracticeApp() {
                 currentChar?.let { char ->
                     val mandarinTone = getTone(currentMandarinPinyin)
                     val cantoneseTone = getTone(currentCantoneseJyutping)
-                    val charColor = if (languageMode == LanguageMode.CANTONESE) {
-                        toneColors[cantoneseTone] ?: MaterialTheme.colorScheme.primary
-                    } else {
-                        toneColors[mandarinTone] ?: MaterialTheme.colorScheme.primary
-                    }
+                    val charColor = toneColors[mandarinTone] ?: MaterialTheme.colorScheme.primary
                     
                     Text(
                         text = char,

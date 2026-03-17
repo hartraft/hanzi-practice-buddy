@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: hanzi-practice-buddy
+    env: docker
+    region: oregon
+    buildCommand: ./gradlew jvmJar --no-daemon
+    startCommand: java -jar build/libs/*.jar
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: DB_USER
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+      - key: PORT
+        value: 8080

@@ -29,6 +29,14 @@ kotlin {
         binaries.executable()
     }
 
+    jvm {
+        compilations.all {
+            kotlinOptions {
+                jvmTarget = "17"
+            }
+        }
+    }
+
     androidTarget {
         compilations.all {
             kotlinOptions {
@@ -71,6 +79,37 @@ kotlin {
         val jsTest by getting {
             dependencies {
                 implementation(kotlin("test-js"))
+            }
+        }
+
+        val jvmMain by getting {
+            dependencies {
+                implementation("io.ktor:ktor-server-core:2.2.4")
+                implementation("io.ktor:ktor-server-netty:2.2.4")
+                implementation("io.ktor:ktor-server-content-negotiation:2.2.4")
+                implementation("io.ktor:ktor-server-html-builder:2.2.4")
+                implementation("io.ktor:ktor-server-sessions:2.2.4")
+                implementation("io.ktor:ktor-server-call-logging:2.2.4")
+                implementation("io.ktor:ktor-server-auth:2.2.4")
+                implementation("io.ktor:ktor-server-conditional-headers:2.2.4")
+                implementation("io.ktor:ktor-server-partial-content:2.2.4")
+                implementation("io.ktor:ktor-server-cors:2.2.4")
+                implementation("io.ktor:ktor-server-default-headers:2.2.4")
+                implementation("ch.qos.logback:logback-classic:1.4.14")
+                implementation("org.postgresql:postgresql:42.7.1")
+                implementation("org.yaml:snakeyaml:2.2")
+                implementation(kotlin("stdlib"))
+                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.2")
+                implementation("org.jetbrains.kotlinx:kotlinx-html-jvm:0.10.1")
+                implementation("io.ktor:ktor-client-core:2.2.4")
+                implementation("io.ktor:ktor-client-cio:2.2.4")
+                implementation("io.ktor:ktor-serialization:2.2.4")
+            }
+        }
+
+        val jvmTest by getting {
+            dependencies {
+                implementation(kotlin("test"))
             }
         }
     }

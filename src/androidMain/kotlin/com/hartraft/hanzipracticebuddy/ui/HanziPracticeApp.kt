@@ -42,7 +42,7 @@ fun HanziPracticeApp() {
     var dictionaryCandidates by remember { mutableStateOf<List<Jyut6pingLookup.SearchResult>>(emptyList()) }
     var inputStartPosition by remember { mutableIntStateOf(0) }
 
-    val wordsText get() = wordsTextFieldValue.text
+    val wordsText: String get() = wordsTextFieldValue.text
     
     var words by remember { mutableStateOf<List<String>>(emptyList()) }
 

@@ -19,19 +19,38 @@ body.dark { background:#000; color:#fff; }
 textarea { width:100%; height:120px; margin-bottom:5px; }
 #writer { width:300px; height:300px; margin:15px auto; border:1px solid #ccc; }
 #char { font-size:56px; margin-top:10px; }
-#pinyin { font-size:18px; margin-bottom:5px; }
+#pinyin-container { display:flex; justify-content:center; gap:20px; margin-bottom:5px; }
+#pinyin-mandarin, #pinyin-cantonese { font-size:18px; }
+#pinyin-label { font-size:12px; opacity:0.7; margin-right:4px; }
 #stats { font-size:14px; margin-top:5px; font-style:italic; white-space: pre-line; }
 button { margin:5px; padding:10px 14px; font-size:16px; cursor:pointer; }
 #streak { font-size:22px; margin:8px; }
+#dictionaryPopup {
+  display:none; position:absolute; background:#fff; border:1px solid #ccc;
+  border-radius:8px; max-height:200px; overflow-y:auto; z-index:100;
+  width:calc(100% - 20px); max-width:400px; left:50%; transform:translateX(-50%);
+  text-align:left; box-shadow:0 4px 12px rgba(0,0,0,0.15);
+}
+body.dark #dictionaryPopup { background:#333; border-color:#555; }
+#dictionaryPopup .dict-item { padding:10px; border-bottom:1px solid #eee; cursor:pointer; }
+body.dark #dictionaryPopup .dict-item { border-bottom-color:#444; }
+#dictionaryPopup .dict-item:hover { background:#f5f5f5; }
+body.dark #dictionaryPopup .dict-item:hover { background:#444; }
+#dictionaryPopup .dict-char { font-size:20px; font-weight:bold; }
+#dictionaryPopup .dict-pinyin { font-size:14px; color:#666; margin-left:8px; }
+body.dark #dictionaryPopup .dict-pinyin { color:#aaa; }
 </style>
 </head>
 <body>
 
 <h2>hanzi-practice-buddy</h2>
-<div id="streak">🔥 0</div>
-<button id="darkToggle">🌙 / ☀️</button>
+<div id="streak">&#128293; 0</div>
+<button id="langToggle">普通话</button>
+<button id="darkToggle">&#127769; / &#9728;</button>
 
-<textarea id="wordList" placeholder="Enter words, one per line"></textarea><br>
+<textarea id="wordList" placeholder="Enter words, one per line"></textarea>
+<div id="dictionaryPopup"></div>
+<br>
 <button id="loadBtn">Load</button>
 <button id="prevBtn">Previous</button>
 <button id="nextBtn">Next</button>
@@ -39,17 +58,95 @@ button { margin:5px; padding:10px 14px; font-size:16px; cursor:pointer; }
 <button id="importBtn">Import</button>
 <button id="pdfBtn">Generate PDF Worksheet</button>
 <button id="statsBtn">Show Stats</button>
-<button id="gamesBtn">Games</button> <!-- Placeholder button -->
+<button id="gamesBtn">Games</button>
 <p><em>Future games: Big2, Chinese Chess</em></p>
 
 <div id="char"></div>
-<div id="pinyin"></div>
+<div id="pinyin-container">
+  <div id="pinyin-mandarin"></div>
+  <div id="pinyin-cantonese"></div>
+</div>
 <div id="writer"></div>
 <div id="stats"></div>
 
 <script>
 const converter = OpenCC.Converter({ from:'cn', to:'tw' });
-const toneColors = {1:'#007AFF',2:'#34C759',3:'#FF9500',4:'#FF3B30',5:'#8E8E93'};
+// Pleco tone colors: 1=Red, 2=Green, 3=Blue, 4=Purple, 5=Gray, 6=Orange (Cantonese)
+const toneColors = {1:'#FF0000',2:'#34C759',3:'#007AFF',4:'#9C27B0',5:'#9E9E9E',6:'#FF9500'};
+
+// Language mode: 'mandarin' or 'cantonese'
+let langMode = 'mandarin';
+
+// Cantonese dictionary (Jyut6ping) - full vocabulary from lshk-org
+const jyut6pingDict = {
+"你":"nei5","我":"ngo5","佢":"keoi5","有":"jau5","人":"jan4","一":"jat1","的":"dik1","係":"hai6",
+"個":"go3","大":"daai6","以":"ji5","日":"jat6","出":"ceot1","唔":"m4","都":"dou1","不":"bat1","時":"si4","過":"gwo3",
+"地":"dei6","得":"dak1","後":"hau6","要":"jiu3","同":"tung4","到":"dou2","可":"ho2","港":"gong2","就":"zau6",
+"家":"gaa1","自":"zi6","成":"sing4","但":"daan6","前":"cin4","多":"do1","在":"zoi6","開":"hoi1","用":"jung6",
+"去":"heoi3","其":"kei4","場":"coeng4","入":"jap6","無":"mou4","會":"wui5","對":"deoi3","好":"hou2","嘅":"ge3",
+"手":"sau2","點":"dim2","心":"sam1","主":"zyu2","事":"si6","本":"bun2","為":"wai4","話":"waa6","最":"zeoi3",
+"實":"sat6","而":"ji4","經":"ging1","之":"zi1","今":"gam1","香":"hoeng1","發":"faat3","機":"gei1","定":"ding6","公":"gung1",
+"中":"zung1","如":"jyu4","方":"fong1","意":"ji3","咁":"gam3","又":"jau6","面":"min6","加":"gaa1","來":"loi4",
+"做":"zou6","了":"liu5","真":"zan1","法":"faat3","月":"jyut6","然":"jin4","比":"bei2","現":"jin6","力":"lik6","全":"cyun4",
+"先":"sin1","學":"hok6","已":"ji5","因":"jan1","新":"san1","明":"ming4","於":"jyu1","工":"gung1","外":"ngoi6","民":"man4",
+"所":"so2","及":"kap6","身":"san1","能":"nang4","問":"man6","美":"mei5","作":"zok3","球":"kau4","睇":"tai2","見":"gin3",
+"理":"lei5","想":"soeng2","員":"jyun4","高":"gou1","頭":"tau4","位":"wai6","冇":"mou5","小":"siu2","收":"sau1","只":"zi2",
+"車":"ce1","表":"biu2","啲":"di1","政":"zing3","食":"sik6","等":"dang2","電":"din6","和":"wo4","至":"zi3","水":"seoi2",
+"老":"lou5","己":"gei2","利":"lei6","市":"si5","買":"maai5","友":"jau5","講":"gong2","反":"faan2","下":"haa6","情":"cing4",
+"價":"gaa3","指":"zi2","部":"bou6","由":"jau4","起":"hei2","關":"gwaan1","樣":"joeng6","未":"mei6","解":"gaai2","住":"zyu6",
+"金":"gam1","天":"tin1","記":"gei3","再":"zoi3","警":"ging2","內":"noi6","兩":"loeng5","合":"hap6","呢":"ne1","連":"lin4","資":"zi1",
+"道":"dou6","啦":"laa1","報":"bou3","台":"toi4","樓":"lau4","放":"fong3","影":"jying2","業":"jip6","即":"zik1","幾":"gei2","接":"zip3",
+"似":"ci5","感":"gam2","落":"lok6","上":"soeng5","受":"sau6","認":"jing6","口":"hau2","死":"sei2","回":"wui4","完":"jyun4","士":"si6",
+"與":"jyu5","巴":"baa1","持":"ci4","通":"tung1","被":"bei6","升":"sing1","單":"daan1","該":"goi1","直":"zik6","路":"lou6","支":"zi1",
+"信":"seon3","星":"sing1","特":"dak6","英":"jing1","原":"jyun4","馬":"maa5","望":"mong6","元":"jyun4","選":"syun2","示":"si6","波":"bo1",
+"題":"tai4","男":"naam4","邊":"bin1","保":"bou2","第":"dai6","交":"gaau1","體":"tai2","司":"si1","女":"neoi5","或":"waak6","三":"saam1",
+"算":"syun3","咗":"zo2","世":"sai3","們":"mun4","仲":"zung6","股":"gu2","條":"tiu4","氣":"hei3","分":"fan1","物":"mat6","安":"on1",
+"噉":"gam2","代":"doi6","推":"teoi1","戰":"zin3","將":"zoeng1","件":"gin6","教":"gaau3","早":"zou2","班":"baan1","提":"tai4","萬":"maan6",
+"走":"zau2","任":"jam6","進":"zeon3","變":"bin3","向":"hoeng3","求":"kau4","太":"taai3","緊":"gan2","約":"joek3","立":"laap6","生":"saang1",
+"常":"soeng4","性":"sing3","投":"tau4","足":"zuk1","賽":"coi3","師":"si1","區":"keoi1","西":"sai1","目":"muk6","色":"sik1","門":"mun4",
+"網":"mong5","正":"zing3","埋":"maai4","客":"haak3","二":"ji6","別":"bit6","結":"git3","界":"gaai3","共":"gung6","府":"fu2","打":"daa2",
+"識":"sik1","間":"gaan1","仔":"zai2","議":"ji5","周":"zau1","聯":"lyun4","首":"sau2","基":"gei1","黎":"lai4","應":"jing1","街":"gaai1",
+"叫":"giu3","留":"lau4","文":"man4","化":"faa3","當":"dong1","超":"ciu1","包":"baau1","令":"ling6","張":"zoeng1","失":"sat1","論":"leon6",
+"爆":"baau3","海":"hoi2","非":"fei1","制":"zai3","片":"pin3","風":"fung1","晚":"maan5","低":"dai1","少":"siu3","白":"baak6","運":"wan6",
+"屋":"uk1","半":"bun3","快":"faai3","費":"fai3","證":"zing3","母":"mou5","除":"ceoi4","建":"gin3","改":"goi2","度":"dou6","排":"paai4",
+"產":"caan2","愛":"oi3","隻":"zek3","拍":"paak3","始":"ci2","底":"dai2","跟":"gan1","角":"gok3","十":"sap6","灣":"waan1","沒":"mut6",
+"嚟":"lai4","活":"wut6","醫":"ji1","亦":"jik6","神":"san4","何":"ho4","玩":"waan2","東":"dung1","總":"zung2","賣":"maai6","軍":"gwan1",
+"視":"si6","細":"sai3","夠":"gau3","哋":"dei6","離":"lei4","號":"hou6","斯":"si1","陣":"zan6","格":"gaak3","案":"on3","更":"gang3","鐘":"zung1",
+"呢":"nei1","呢":"ni1","即":"zik1","跟":"gan1","仲":"zung6","正":"zing3","啱":"ngaam1","驗":"jim6","蛋":"daan2","添":"tim1","嬲":"nau1",
+"成本":"sing4 bun2","戒":"gaai3","改善":"goi2 sin6","灰":"fui1","喊":"haam3","臭":"cau3","野":"je5","蘋":"ping4","甜":"tim4",
+"觀眾":"gun1 zung3","即時":"zik1 si4","亞洲":"aa3 zau1","胸":"hung1","透露":"tau3 lou6","強調":"koeng4 diu6","餐廳":"caan1 teng1",
+"空間":"hung1 gaan1","一半":"jat1 bun3","成交":"sing4 gaau1","必須":"bit1 seoi1","保護":"bou2 wu6","老師":"lou5 si1","相關":"soeng1 gwaan1",
+"忘":"mong4","揭":"kit3","廈":"haa6","總共":"zung2 gung6","興趣":"hing3 ceoi3","免費":"min5 fai3","本地":"bun2 dei6","鼓":"gu2","好過":"hou2 gwo3",
+"明白":"ming4 baak6","同事":"tung4 si6","總統":"zung2 tung2","推介":"teoi1 gaai3","好多人":"hou2 do1 jan4","屋":"uk1","避":"bei6","越":"jyut6",
+"既":"gei3","經驗":"ging1 jim6","蛋":"daan6","灰":"fui1","喊":"haam3","臭":"cau3","野":"je5","蘋":"ping4","甜":"tim4","觀眾":"gun1 zung3",
+"即時":"zik1 si4","亞洲":"aa3 zau1","胸":"hung1","透露":"tau3 lou6","強調":"koeng4 diu6","餐廳":"caan1 teng1","空間":"hung1 gaan1","一半":"jat1 bun3",
+"成交":"sing4 gaau1","必須":"bit1 seoi1","保護":"bou2 wu6","老師":"lou5 si1","相關":"soeng1 gwaan1","忘":"mong4","揭":"kit3","廈":"haa6","總共":"zung2 gung6",
+"興趣":"hing3 ceoi3","免費":"min5 fai3","本地":"bun2 dei6","鼓":"gu2","好過":"hou2 gwo3","明白":"ming4 baak6","同事":"tung4 si6","總統":"zung2 tung2",
+"推介":"teoi1 gaai3","好多人":"hou2 do1 jan4","屋":"uk1","避":"bei6","越":"jyut6","既":"gei3","跟":"gan1","仲":"zung6","正":"zing3","啱":"ngaam1"
+};
+
+function getJyut6ping(char) {
+  return jyut6pingDict[char] || char;
+}
+
+function searchDictionary(query) {
+  if (!query || query.length < 1) return [];
+  const results = [];
+  const queryLower = query.toLowerCase();
+  for (const [char, pinyin] of Object.entries(jyut6pingDict)) {
+    // Match if pinyin starts with query (e.g., "ngo" matches "ngo5")
+    // or if character contains the query
+    if (pinyin.startsWith(queryLower) || char.includes(query)) {
+      results.push({ char, pinyin, matchType: pinyin.startsWith(queryLower) ? 'prefix' : 'contains' });
+    }
+  }
+  // Sort: prefix matches first, then by contains
+  results.sort((a, b) => {
+    if (a.matchType !== b.matchType) return a.matchType === 'prefix' ? -1 : 1;
+    return a.pinyin.localeCompare(b.pinyin);
+  });
+  return results.slice(0, 10);
+}
 
 let words = [];
 let uniqueChars = [];
@@ -64,9 +161,13 @@ const els = {
   wordList: document.getElementById('wordList'),
   char: document.getElementById('char'),
   pinyin: document.getElementById('pinyin'),
+  pinyinMandarin: document.getElementById('pinyin-mandarin'),
+  pinyinCantonese: document.getElementById('pinyin-cantonese'),
   writer: document.getElementById('writer'),
   streak: document.getElementById('streak'),
-  stats: document.getElementById('stats')
+  stats: document.getElementById('stats'),
+  dictPopup: document.getElementById('dictionaryPopup'),
+  langToggle: document.getElementById('langToggle')
 };
 
 function updateStreak(){
@@ -81,7 +182,7 @@ function updateStreak(){
 function saveProgress(){
   localStorage.setItem('hanziPracticeBuddy', JSON.stringify({
     words, uniqueChars, charIndex, streak, lastPracticeDate,
-    today:[...todaySet], allChars:[...allCharsSet]
+    today:[...todaySet], allChars:[...allCharsSet], langMode
   }));
 }
 
@@ -97,30 +198,36 @@ function restoreProgress(){
     lastPracticeDate = d.lastPracticeDate || null;
     todaySet = new Set(d.today || []);
     allCharsSet = new Set(d.allChars || []);
+    langMode = d.langMode || 'mandarin';
     els.wordList.value = words.join('\n');
     els.streak.textContent = `🔥 ${streak}`;
+    updateLangButton();
     updateStatsText();
   }catch(e){}
 }
 
 function loadWords(){
   let input = els.wordList.value.split('\n').map(w=>w.trim()).filter(Boolean);
-  input = [...new Set(input)]; // remove duplicate words
+  input = [...new Set(input)];
   els.wordList.value = input.join('\n');
   if(!input.length){ alert('Enter at least one word'); return; }
 
   words = input.map(w => converter(w));
 
-  // Build unique character list
   const charSet = new Set();
-  words.forEach(w => w.split('').forEach(c => charSet.add(c)));
+  words.forEach(w => w.split('').forEach(c => {
+    if (c.codePointAt(0) >= 0x4E00 && c.codePointAt(0) <= 0x9FFF) {
+      charSet.add(c);
+    }
+  }));
   uniqueChars = Array.from(charSet);
 
   charIndex = 0;
   uniqueChars.forEach(c => allCharsSet.add(c));
 
   els.char.textContent = '';
-  els.pinyin.textContent = '';
+  els.pinyinMandarin.textContent = '';
+  els.pinyinCantonese.textContent = '';
   els.writer.innerHTML = '';
 
   showChar();
@@ -140,18 +247,45 @@ function loadFromURL(){
   els.wordList.value = list.join('\n');
 }
 
+function getTone(pinyin, mode) {
+  if (mode === 'cantonese') {
+    const match = pinyin.match(/[1-6]/);
+    return match ? parseInt(match[0]) : 5;
+  }
+  const match = pinyin.match(/[1-5]/);
+  return match ? parseInt(match[0]) : 5;
+}
+
 function showChar(){
   if(!uniqueChars[charIndex]) return;
   const char = uniqueChars[charIndex];
 
   updateStreak(); todaySet.add(char); allCharsSet.add(char);
   els.char.textContent = char;
+  
   try{
-    const pyNum = pinyinPro.pinyin(char,{toneType:'num'});
-    const tone = parseInt(pyNum.match(/[1-5]/)?.[0] || 5);
-    els.char.style.color = toneColors[tone];
-    els.pinyin.textContent = pinyinPro.pinyin(char,{toneType:'symbol'});
-  }catch(e){ els.pinyin.textContent=''; }
+    // Get Mandarin pinyin
+    const mandarinPy = pinyinPro.pinyin(char,{toneType:'num'});
+    const mandarinTone = getTone(mandarinPy, 'mandarin');
+    const mandarinPySymbol = pinyinPro.pinyin(char,{toneType:'symbol'});
+    
+    // Get Cantonese jyutping
+    const cantonesePy = getJyut6ping(char);
+    const cantoneseTone = getTone(cantonesePy, 'cantonese');
+    
+    // Color the character with the Mandarin pinyin tone color
+    els.char.style.color = toneColors[mandarinTone] || toneColors[5];
+    
+    // Display both pronunciations side by side with tone colors
+    // Mandarin: shown in blue-ish tones (Pleco style)
+    const mandarinSpan = `<span id="pinyin-label">普:</span><span style="color:${toneColors[mandarinTone] || toneColors[5]}">${mandarinPySymbol}</span>`;
+    const cantoneseSpan = `<span id="pinyin-label">粵:</span><span style="color:${toneColors[cantoneseTone] || toneColors[5]}">${cantonesePy}</span>`;
+    els.pinyinMandarin.innerHTML = mandarinSpan;
+    els.pinyinCantonese.innerHTML = cantoneseSpan;
+  }catch(e){ 
+    els.pinyinMandarin.textContent = '';
+    els.pinyinCantonese.textContent = '';
+  }
 
   els.writer.innerHTML='';
   writer = HanziWriter.create('writer', char, { width:300, height:300, showOutline:true, showCharacter:false });
@@ -180,7 +314,7 @@ function finishList(){
   msg.style.border='2px solid green'; msg.style.borderRadius='10px'; msg.style.zIndex='1000';
   document.body.appendChild(msg);
   setTimeout(()=>document.body.removeChild(msg),3000);
-  els.char.textContent=''; els.pinyin.textContent=''; els.writer.innerHTML='';
+  els.char.textContent=''; els.pinyinMandarin.textContent=''; els.pinyinCantonese.textContent=''; els.writer.innerHTML='';
 }
 
 function updateStatsText(){
@@ -204,9 +338,12 @@ function importWords(){
         words = [...new Set(data.words || [])];
         els.wordList.value = words.join('\n');
 
-        // rebuild unique characters
         const charSet = new Set();
-        words.forEach(w => w.split('').forEach(c => charSet.add(c)));
+        words.forEach(w => w.split('').forEach(c => {
+          if (c.codePointAt(0) >= 0x4E00 && c.codePointAt(0) <= 0x9FFF) {
+            charSet.add(c);
+          }
+        }));
         uniqueChars = Array.from(charSet);
 
         charIndex = 0;
@@ -240,13 +377,96 @@ function generatePDF(){
         doc.text(char, x + col*boxSize + 6, y + row*boxSize + 18);
       }
     }
-    const py = pinyinPro.pinyin(char,{toneType:'symbol'});
-    doc.setFontSize(12);
+    const mandarinPy = pinyinPro.pinyin(char,{toneType:'symbol'});
+    const cantonesePy = getJyut6ping(char);
+    const py = `${mandarinPy} | ${cantonesePy}`;
+    doc.setFontSize(10);
     doc.text(py, x + (gridPerChar*boxSize)/2, y + gridPerChar*boxSize + 5, {align:'center'});
     y += gridPerChar*boxSize + 15;
     if(y + gridPerChar*boxSize + 15 > pageHeight - margin){ doc.addPage(); y=margin; }
   });
   doc.save('hanzi-practice-buddy-worksheet.pdf');
+}
+
+// ===== LANGUAGE TOGGLE =====
+function toggleLanguage() {
+  langMode = langMode === 'mandarin' ? 'cantonese' : 'mandarin';
+  updateLangButton();
+  saveProgress();
+  if (uniqueChars.length > 0) {
+    showChar();
+  }
+}
+
+function updateLangButton() {
+  els.langToggle.textContent = langMode === 'mandarin' ? '普通话' : '粵語';
+}
+
+// ===== DICTIONARY POPUP =====
+function showDictionaryPopup(query) {
+  if (langMode !== 'cantonese' || !query) {
+    els.dictPopup.style.display = 'none';
+    return;
+  }
+  
+  const results = searchDictionary(query);
+  if (results.length === 0) {
+    els.dictPopup.style.display = 'none';
+    return;
+  }
+  
+  els.dictPopup.innerHTML = results.map(r => 
+    `<div class="dict-item" onclick="insertDictWord('${r.char}')">
+      <span class="dict-char">${r.char}</span>
+      <span class="dict-pinyin">${r.pinyin}</span>
+    </div>`
+  ).join('');
+  els.dictPopup.style.display = 'block';
+}
+
+function insertDictWord(word) {
+  const pos = els.wordList.selectionStart;
+  const text = els.wordList.value;
+  
+  // Find the start of the current pinyin (look back from cursor for non-Chinese characters)
+  let start = pos;
+  while (start > 0) {
+    const char = text[start - 1];
+    // Stop if we hit a Chinese character or newline (start of a new word)
+    if (/[\u4e00-\u9fff]/.test(char) || char === '\n') {
+      break;
+    }
+    start--;
+  }
+  
+  // Replace the pinyin with the selected character
+  const newText = text.slice(0, start) + word + text.slice(pos);
+  els.wordList.value = newText;
+  
+  // Position cursor after the inserted character
+  const newPos = start + word.length;
+  els.wordList.setSelectionRange(newPos, newPos);
+  els.wordList.focus();
+  
+  // Trigger popup for next input after a brief delay
+  setTimeout(() => {
+    const currentText = els.wordList.value;
+    const cursorPos = els.wordList.selectionStart;
+    
+    // Find the pinyin after the last newline or Chinese character
+    let pinyinStart = cursorPos;
+    while (pinyinStart < currentText.length) {
+      const char = currentText[pinyinStart];
+      if (/[\u4e00-\u9fff]/.test(char) || char === '\n') {
+        break;
+      }
+      pinyinStart++;
+    }
+    
+    const lastNewline = currentText.lastIndexOf('\n', cursorPos - 1);
+    const lastWord = lastNewline >= 0 ? currentText.slice(lastNewline + 1, cursorPos) : currentText.slice(0, cursorPos);
+    showDictionaryPopup(lastWord);
+  }, 10);
 }
 
 // ===== EVENT LISTENERS =====
@@ -259,9 +479,19 @@ document.getElementById('exportBtn').onclick = exportWords;
 document.getElementById('importBtn').onclick = importWords;
 document.getElementById('pdfBtn').onclick = generatePDF;
 document.getElementById('gamesBtn').onclick = ()=>alert('Games coming soon: Big2, Chinese Chess');
+document.getElementById('langToggle').onclick = toggleLanguage;
+
+els.wordList.addEventListener('input', (e) => {
+  if (langMode === 'cantonese') {
+    const text = e.target.value;
+    // Get the last word/characters typed (up to 5 characters for pinyin matching)
+    const lastSpaceIndex = text.lastIndexOf('\n');
+    const lastWord = lastSpaceIndex >= 0 ? text.slice(lastSpaceIndex + 1) : text;
+    showDictionaryPopup(lastWord);
+  }
+});
 
 document.addEventListener('DOMContentLoaded',()=>{ loadFromURL(); restoreProgress(); });
 </script>
 </body>
 </html>
-

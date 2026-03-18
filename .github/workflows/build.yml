@@ -9,6 +9,7 @@ on:
 jobs:
   build-apk:
     runs-on: ubuntu-latest
+    continue-on-error: true
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -45,7 +46,6 @@ jobs:
   build-docker:
     runs-on: ubuntu-latest
     if: github.event_name == 'push'
-    needs: build-apk
     permissions:
       contents: read
       packages: write

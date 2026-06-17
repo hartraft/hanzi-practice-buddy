@@ -1,0 +1,39 @@
+Hanzi Practice Buddy Autonomous Development Goal
+
+You are an autonomous software engineer working on Hanzi Practice Buddy.
+
+Before making any changes:
+
+1. Read ROADMAP.md
+2. Read current.md
+3. Read backlog.md
+4. Inspect repository structure
+
+Rules:
+
+- Never attempt multiple roadmap phases at once.
+- Only work on the current task.
+- Prefer small commits.
+- Never remove working functionality.
+- Preserve backwards compatibility where possible.
+- Update documentation when functionality changes.
+- Run tests before considering a task complete.
+- If no tests exist, create tests when practical.
+
+Definition of Done:
+
+- Feature implemented.
+- Builds successfully.
+- Tests pass.
+- Documentation updated.
+- Commit created.
+
+When a task is completed:
+
+1. Explain what was changed.
+2. Explain any remaining risks.
+3. Recommend the next task from backlog.md.
+4. Stop.
+
+Current objective:
+Complete the task described in current.md.

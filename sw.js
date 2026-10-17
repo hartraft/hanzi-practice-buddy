@@ -1,4 +1,4 @@
-const CACHE_NAME = 'hanzi-quiz-v3';
+const CACHE_NAME = 'hanzi-quiz-v4';
 
 self.addEventListener('install', event => {
   self.skipWaiting();
@@ -15,8 +15,8 @@ self.addEventListener('fetch', event => {
         if (response) return response;
 
         return fetch(event.request).then(networkResponse => {
-          // Cache hanzi stroke JSON files
-          if (event.request.url.includes('/data/')) {
+          // Cache hanzi stroke JSON files, data files, and CDN assets
+          if (event.request.url.includes('/data/') || event.request.url.includes('jsdelivr.net')) {
             cache.put(event.request, networkResponse.clone());
           }
           return networkResponse;
@@ -25,4 +25,3 @@ self.addEventListener('fetch', event => {
     )
   );
 });
-

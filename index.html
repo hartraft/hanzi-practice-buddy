@@ -16,13 +16,16 @@
 <style>
 body { font-family: Arial, sans-serif; padding: 10px; text-align: center; background:#fff; color:#000; }
 body.dark { background:#000; color:#fff; }
-textarea { width:100%; height:120px; margin-bottom:5px; }
+textarea { width:100%; height:100px; margin-bottom:5px; }
 #writer { width:300px; height:300px; margin:15px auto; border:1px solid #ccc; }
 #char { font-size:56px; margin-top:10px; }
 #pinyin { font-size:18px; margin-bottom:5px; }
+#vocabInfo { font-size:14px; margin:8px auto; max-width: 400px; line-height: 1.4; color: #555; }
+body.dark #vocabInfo { color: #aaa; }
 #stats { font-size:14px; margin-top:5px; font-style:italic; white-space: pre-line; }
-button { margin:5px; padding:10px 14px; font-size:16px; cursor:pointer; }
-#streak { font-size:22px; margin:8px; }
+button { margin:5px; padding:8px 12px; font-size:15px; cursor:pointer; }
+#streak { font-size:20px; margin:6px; }
+.controls-group { margin: 10px 0; }
 </style>
 </head>
 <body>
@@ -31,28 +34,59 @@ button { margin:5px; padding:10px 14px; font-size:16px; cursor:pointer; }
 <div id="streak">🔥 0</div>
 <button id="darkToggle">🌙 / ☀️</button>
 
-<textarea id="wordList" placeholder="Enter words, one per line"></textarea><br>
-<button id="loadBtn">Load</button>
-<button id="prevBtn">Previous</button>
-<button id="nextBtn">Next</button>
-<button id="exportBtn">Export</button>
-<button id="importBtn">Import</button>
-<button id="pdfBtn">Generate PDF Worksheet</button>
-<button id="statsBtn">Show Stats</button>
-<button id="gamesBtn">Games</button> <!-- Placeholder button -->
-<p><em>Future games: Big2, Chinese Chess</em></p>
+<div class="controls-group">
+  <label for="deckSelect"><b>Vocabulary Deck:</b></label>
+  <select id="deckSelect">
+    <option value="custom">Custom List (Textarea)</option>
+    <option value="novice_1">TOCFL Novice 1 (160 entries)</option>
+    <option value="novice_2">TOCFL Novice 2 (234 entries)</option>
+    <option value="both">TOCFL Novice 1 & 2 (394 entries)</option>
+  </select>
+</div>
 
+<div id="customContainer">
+  <textarea id="wordList" placeholder="Enter words, one per line"></textarea><br>
+  <button id="loadBtn">Load Custom List</button>
+</div>
+
+<div class="controls-group" style="font-size: 14px;">
+  <label><input type="checkbox" id="hidePromptToggle"> Hide Character Prompt</label>
+  &nbsp;&nbsp;
+  <label><input type="checkbox" id="hideOutlineToggle"> Hide Outline / Shadow</label>
+  &nbsp;&nbsp;
+  <label><input type="checkbox" id="noHintToggle"> No-Hint Mode</label>
+</div>
+
+<div>
+  <button id="prevBtn">Previous</button>
+  <button id="nextBtn">Next</button>
+  <button id="replayBtn">Stroke Replay</button>
+</div>
+
+<div id="progressIndicator" style="font-weight: bold; margin: 8px;"></div>
 <div id="char"></div>
 <div id="pinyin"></div>
+<div id="vocabInfo"></div>
 <div id="writer"></div>
 <div id="stats"></div>
+
+<div>
+  <button id="exportBtn">Export</button>
+  <button id="importBtn">Import</button>
+  <button id="pdfBtn">Generate PDF Worksheet</button>
+  <button id="gamesBtn">Games</button>
+</div>
+<p><em>Future games: Big2, Chinese Chess</em></p>
 
 <script>
 const converter = OpenCC.Converter({ from:'cn', to:'tw' });
 const toneColors = {1:'#007AFF',2:'#34C759',3:'#FF9500',4:'#FF3B30',5:'#8E8E93'};
 
+let currentDeck = 'custom';
+let vocabEntries = [];
 let words = [];
 let uniqueChars = [];
+let charInfoMap = {};
 let charIndex = 0;
 let writer = null;
 let streak = 0;
@@ -60,13 +94,27 @@ let lastPracticeDate = null;
 let todaySet = new Set();
 let allCharsSet = new Set();
 
+let prefs = {
+  hidePrompt: false,
+  hideOutline: false,
+  noHint: false,
+  dark: false
+};
+
 const els = {
   wordList: document.getElementById('wordList'),
   char: document.getElementById('char'),
   pinyin: document.getElementById('pinyin'),
+  vocabInfo: document.getElementById('vocabInfo'),
   writer: document.getElementById('writer'),
   streak: document.getElementById('streak'),
-  stats: document.getElementById('stats')
+  stats: document.getElementById('stats'),
+  deckSelect: document.getElementById('deckSelect'),
+  customContainer: document.getElementById('customContainer'),
+  progressIndicator: document.getElementById('progressIndicator'),
+  hidePromptToggle: document.getElementById('hidePromptToggle'),
+  hideOutlineToggle: document.getElementById('hideOutlineToggle'),
+  noHintToggle: document.getElementById('noHintToggle')
 };
 
 function updateStreak(){
@@ -80,8 +128,8 @@ function updateStreak(){
 
 function saveProgress(){
   localStorage.setItem('hanziPracticeBuddy', JSON.stringify({
-    words, uniqueChars, charIndex, streak, lastPracticeDate,
-    today:[...todaySet], allChars:[...allCharsSet]
+    currentDeck, words, uniqueChars, charIndex, streak, lastPracticeDate,
+    today:[...todaySet], allChars:[...allCharsSet], prefs
   }));
 }
 
@@ -90,6 +138,8 @@ function restoreProgress(){
   if(!raw) return;
   try{
     const d = JSON.parse(raw);
+    currentDeck = d.currentDeck || 'custom';
+    els.deckSelect.value = currentDeck;
     words = d.words || [];
     uniqueChars = d.uniqueChars || [];
     charIndex = d.charIndex || 0;
@@ -97,10 +147,74 @@ function restoreProgress(){
     lastPracticeDate = d.lastPracticeDate || null;
     todaySet = new Set(d.today || []);
     allCharsSet = new Set(d.allChars || []);
-    els.wordList.value = words.join('\n');
+    if (d.prefs) {
+      prefs = d.prefs;
+      els.hidePromptToggle.checked = prefs.hidePrompt;
+      els.hideOutlineToggle.checked = prefs.hideOutline;
+      els.noHintToggle.checked = prefs.noHint;
+      if (prefs.dark) {
+        document.body.classList.add('dark');
+      }
+    }
+    
+    if(currentDeck === 'custom'){
+      els.customContainer.style.display = 'block';
+      els.wordList.value = words.join('\n');
+      if(uniqueChars.length > 0){
+        showChar();
+      }
+    } else {
+      els.customContainer.style.display = 'none';
+      loadDeck(currentDeck);
+    }
+    
     els.streak.textContent = `🔥 ${streak}`;
     updateStatsText();
   }catch(e){}
+}
+
+async function loadDeck(deckKey){
+  currentDeck = deckKey;
+  if(deckKey === 'custom'){
+    els.customContainer.style.display = 'block';
+    loadWords();
+    return;
+  }
+  els.customContainer.style.display = 'none';
+  try{
+    const res = await fetch('data/vocabulary_novice.json');
+    const data = await res.json();
+    vocabEntries = [];
+    if(deckKey === 'novice_1' || deckKey === 'both'){
+      vocabEntries.push(...(data.novice_1 || []));
+    }
+    if(deckKey === 'novice_2' || deckKey === 'both'){
+      vocabEntries.push(...(data.novice_2 || []));
+    }
+    words = vocabEntries.map(e => e.vocabulary).filter(Boolean);
+    setupCharsFromVocab();
+  }catch(err){
+    alert('Failed to load vocabulary dataset. Ensure data/vocabulary_novice.json exists.');
+  }
+}
+
+function setupCharsFromVocab(){
+  charInfoMap = {};
+  const charSet = new Set();
+  vocabEntries.forEach(entry => {
+    const voc = converter(entry.vocabulary || '');
+    voc.split('').forEach(c => {
+      charSet.add(c);
+      if(!charInfoMap[c]){
+        charInfoMap[c] = entry;
+      }
+    });
+  });
+  uniqueChars = Array.from(charSet);
+  charIndex = 0;
+  uniqueChars.forEach(c => allCharsSet.add(c));
+  showChar();
+  saveProgress();
 }
 
 function loadWords(){
@@ -121,23 +235,39 @@ function loadWords(){
 
   els.char.textContent = '';
   els.pinyin.textContent = '';
+  els.vocabInfo.textContent = '';
   els.writer.innerHTML = '';
 
   showChar();
-  updateURL();
   saveProgress();
 }
 
 function updateURL(){
-  const encoded = encodeURIComponent(words.join(' '));
-  history.replaceState(null,'',`?words=${encoded}`);
+  if(currentDeck === 'custom'){
+    const encoded = encodeURIComponent(words.join(' '));
+    history.replaceState(null,'',`?words=${encoded}`);
+  } else {
+    history.replaceState(null,'',`?deck=${currentDeck}`);
+  }
 }
 
 function loadFromURL(){
   const p = new URLSearchParams(location.search);
-  if(!p.has('words')) return;
-  const list = [...new Set(p.get('words').split(/[ ,\n]+/).filter(Boolean))];
-  els.wordList.value = list.join('\n');
+  if(p.has('deck')){
+    const d = p.get('deck');
+    if(['novice_1', 'novice_2', 'both'].includes(d)){
+      els.deckSelect.value = d;
+      loadDeck(d);
+      return;
+    }
+  }
+  if(p.has('words')){
+    const list = [...new Set(p.get('words').split(/[ ,\n]+/).filter(Boolean))];
+    if(list.length){
+      els.wordList.value = list.join('\n');
+      loadWords();
+    }
+  }
 }
 
 function showChar(){
@@ -145,19 +275,43 @@ function showChar(){
   const char = uniqueChars[charIndex];
 
   updateStreak(); todaySet.add(char); allCharsSet.add(char);
-  els.char.textContent = char;
-  try{
-    const pyNum = pinyinPro.pinyin(char,{toneType:'num'});
-    const tone = parseInt(pyNum.match(/[1-5]/)?.[0] || 5);
-    els.char.style.color = toneColors[tone];
-    els.pinyin.textContent = pinyinPro.pinyin(char,{toneType:'symbol'});
-  }catch(e){ els.pinyin.textContent=''; }
+
+  if(prefs.hidePrompt){
+    els.char.textContent = '';
+    els.pinyin.textContent = '';
+  } else {
+    els.char.textContent = char;
+    try{
+      const pyNum = pinyinPro.pinyin(char,{toneType:'num'});
+      const tone = parseInt(pyNum.match(/[1-5]/)?.[0] || 5);
+      els.char.style.color = toneColors[tone];
+      els.pinyin.textContent = pinyinPro.pinyin(char,{toneType:'symbol'});
+    }catch(e){ els.pinyin.textContent=''; }
+  }
+
+  const info = charInfoMap[char];
+  if(info){
+    els.vocabInfo.innerHTML = `<b>Word:</b> ${info.vocabulary} | <b>Pinyin:</b> ${info.pinyin}<br><b>Context:</b> ${info.context || 'N/A'} | <b>POS:</b> ${info.pos || 'N/A'}`;
+  } else {
+    els.vocabInfo.textContent = '';
+  }
+
+  els.progressIndicator.textContent = `Character ${charIndex + 1} of ${uniqueChars.length}`;
 
   els.writer.innerHTML='';
-  writer = HanziWriter.create('writer', char, { width:300, height:300, showOutline:true, showCharacter:false });
+  const options = {
+    width: 300,
+    height: 300,
+    showOutline: !prefs.hideOutline,
+    showCharacter: false,
+    leniency: prefs.noHint ? 0.6 : 0.8
+  };
+
+  writer = HanziWriter.create('writer', char, options);
   writer.quiz({ onComplete: nextChar });
   updateStatsText();
   saveProgress();
+  updateURL();
 }
 
 function nextChar(){
@@ -170,9 +324,15 @@ function prevChar(){
   if(charIndex>0){ charIndex--; showChar(); }
 }
 
+function replayStroke(){
+  if(writer){
+    writer.animateCharacter();
+  }
+}
+
 function finishList(){
   const msg = document.createElement('div');
-  msg.textContent = '🎉 Congratulations! You completed the word list!';
+  msg.textContent = '🎉 Congratulations! You completed the deck/list!';
   msg.style.fontSize='24px'; msg.style.color='green';
   msg.style.position='fixed'; msg.style.top='40%'; msg.style.left='50%';
   msg.style.transform='translate(-50%, -50%)';
@@ -180,7 +340,7 @@ function finishList(){
   msg.style.border='2px solid green'; msg.style.borderRadius='10px'; msg.style.zIndex='1000';
   document.body.appendChild(msg);
   setTimeout(()=>document.body.removeChild(msg),3000);
-  els.char.textContent=''; els.pinyin.textContent=''; els.writer.innerHTML='';
+  els.char.textContent=''; els.pinyin.textContent=''; els.vocabInfo.textContent=''; els.writer.innerHTML='';
 }
 
 function updateStatsText(){
@@ -189,7 +349,7 @@ function updateStatsText(){
 
 // ===== IMPORT / EXPORT =====
 function exportWords(){
-  const blob = new Blob([JSON.stringify({ words })],{type:'application/json'});
+  const blob = new Blob([JSON.stringify({ words, currentDeck })],{type:'application/json'});
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'hanzi-practice-buddy-words.json'; a.click();
 }
 
@@ -201,18 +361,21 @@ function importWords(){
     reader.onload = () => {
       try{
         const data = JSON.parse(reader.result);
-        words = [...new Set(data.words || [])];
-        els.wordList.value = words.join('\n');
-
-        // rebuild unique characters
-        const charSet = new Set();
-        words.forEach(w => w.split('').forEach(c => charSet.add(c)));
-        uniqueChars = Array.from(charSet);
-
-        charIndex = 0;
-        uniqueChars.forEach(c => allCharsSet.add(c));
-
-        showChar(); saveProgress();
+        currentDeck = data.currentDeck || 'custom';
+        els.deckSelect.value = currentDeck;
+        if(currentDeck === 'custom'){
+          els.customContainer.style.display = 'block';
+          words = [...new Set(data.words || [])];
+          els.wordList.value = words.join('\n');
+          const charSet = new Set();
+          words.forEach(w => w.split('').forEach(c => charSet.add(c)));
+          uniqueChars = Array.from(charSet);
+          charIndex = 0;
+          uniqueChars.forEach(c => allCharsSet.add(c));
+          showChar(); saveProgress();
+        } else {
+          loadDeck(currentDeck);
+        }
       }catch(err){ alert('Invalid JSON file'); }
     };
     reader.readAsText(file);
@@ -222,7 +385,7 @@ function importWords(){
 
 // ===== PDF WORKSHEET =====
 function generatePDF(){
-  if(uniqueChars.length === 0){ alert('Load a word list first'); return; }
+  if(uniqueChars.length === 0){ alert('Load a deck or word list first'); return; }
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ unit:'mm', format:'a4' });
   const pageWidth = doc.internal.pageSize.getWidth();
@@ -250,18 +413,49 @@ function generatePDF(){
 }
 
 // ===== EVENT LISTENERS =====
-document.getElementById('loadBtn').onclick=loadWords;
-document.getElementById('nextBtn').onclick=nextChar;
-document.getElementById('prevBtn').onclick=prevChar;
-document.getElementById('statsBtn').onclick=updateStatsText;
-document.getElementById('darkToggle').onclick = ()=>document.body.classList.toggle('dark');
+els.deckSelect.onchange = (e) => loadDeck(e.target.value);
+document.getElementById('loadBtn').onclick = loadWords;
+document.getElementById('nextBtn').onclick = nextChar;
+document.getElementById('prevBtn').onclick = prevChar;
+document.getElementById('replayBtn').onclick = replayStroke;
+document.getElementById('statsBtn').onclick = updateStatsText;
+document.getElementById('darkToggle').onclick = () => {
+  document.body.classList.toggle('dark');
+  prefs.dark = document.body.classList.contains('dark');
+  saveProgress();
+};
+
+els.hidePromptToggle.onchange = (e) => {
+  prefs.hidePrompt = e.target.checked;
+  showChar();
+};
+
+els.hideOutlineToggle.onchange = (e) => {
+  prefs.hideOutline = e.target.checked;
+  showChar();
+};
+
+els.noHintToggle.onchange = (e) => {
+  prefs.noHint = e.target.checked;
+  showChar();
+};
+
 document.getElementById('exportBtn').onclick = exportWords;
 document.getElementById('importBtn').onclick = importWords;
 document.getElementById('pdfBtn').onclick = generatePDF;
-document.getElementById('gamesBtn').onclick = ()=>alert('Games coming soon: Big2, Chinese Chess');
+document.getElementById('gamesBtn').onclick = () => alert('Games coming soon: Big2, Chinese Chess');
 
-document.addEventListener('DOMContentLoaded',()=>{ loadFromURL(); restoreProgress(); });
+document.addEventListener('DOMContentLoaded', () => {
+  restoreProgress();
+  const p = new URLSearchParams(location.search);
+  if(!p.has('deck') && !p.has('words') && uniqueChars.length === 0){
+    // Default to Novice 1 if nothing loaded
+    els.deckSelect.value = 'novice_1';
+    loadDeck('novice_1');
+  } else {
+    loadFromURL();
+  }
+});
 </script>
 </body>
 </html>
-

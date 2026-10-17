@@ -44,7 +44,7 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
       - name: Set up Android SDK
-        uses: android-actions/setup-android-sdk@v3
+        uses: android-actions/setup-android@v3
         with:
           api-level: 33
       - name: Build Android Debug APK

@@ -287,6 +287,12 @@ function loadFromURL(){
   }
 }
 
+function escapeHtml(str){
+  return String(str).replace(/[&<>"']/g, c => ({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  }[c]));
+}
+
 function showChar(){
   if(!uniqueChars[charIndex]) return;
   const char = uniqueChars[charIndex];
@@ -308,7 +314,7 @@ function showChar(){
 
   const info = charInfoMap[char];
   if(info){
-    els.vocabInfo.innerHTML = `<b>Word:</b> ${info.vocabulary} | <b>Pinyin:</b> ${info.pinyin}<br><b>Context:</b> ${info.context || 'N/A'} | <b>POS:</b> ${info.pos || 'N/A'}`;
+    els.vocabInfo.innerHTML = `<b>Word:</b> ${escapeHtml(info.vocabulary)} | <b>Pinyin:</b> ${escapeHtml(info.pinyin)}<br><b>Context:</b> ${escapeHtml(info.context || 'N/A')} | <b>POS:</b> ${escapeHtml(info.pos || 'N/A')}`;
   } else {
     els.vocabInfo.textContent = '';
   }

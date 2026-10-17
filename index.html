@@ -101,6 +101,8 @@ let prefs = {
   dark: false
 };
 
+let deckRestored = false;
+
 const els = {
   wordList: document.getElementById('wordList'),
   char: document.getElementById('char'),
@@ -165,6 +167,7 @@ function restoreProgress(){
       }
     } else {
       els.customContainer.style.display = 'none';
+      deckRestored = true;
       loadDeck(currentDeck);
     }
     
@@ -476,7 +479,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   restoreProgress();
   const p = new URLSearchParams(location.search);
-  if(!p.has('deck') && !p.has('words') && uniqueChars.length === 0){
+  if(!p.has('deck') && !p.has('words') && uniqueChars.length === 0 && !deckRestored){
     // Default to Novice 1 if nothing loaded
     els.deckSelect.value = 'novice_1';
     loadDeck('novice_1');

@@ -462,6 +462,9 @@ document.getElementById('pdfBtn').onclick = generatePDF;
 document.getElementById('gamesBtn').onclick = () => alert('Games coming soon: Big2, Chinese Chess');
 
 document.addEventListener('DOMContentLoaded', () => {
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  }
   restoreProgress();
   const p = new URLSearchParams(location.search);
   if(!p.has('deck') && !p.has('words') && uniqueChars.length === 0){

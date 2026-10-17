@@ -1,6 +1,6 @@
 {
   "name": "hanzi-practice-buddy",
-  "version": "1.0.0",
+  "version": "1.0.1.0",
   "description": "Hanzi Practice Buddy PWA & Android app",
   "main": "index.html",
   "scripts": {

@@ -1,0 +1,2371 @@
+{
+  "novice_1": [
+    {
+      "context": "個人資料",
+      "vocabulary": "我",
+      "pinyin": "wŏ",
+      "pos": "N"
+    },
+    {
+      "context": "個人資料",
+      "vocabulary": "你/妳",
+      "pinyin": "nĭ",
+      "pos": "N"
+    },
+    {
+      "context": "個人資料",
+      "vocabulary": "他/她",
+      "pinyin": "tā",
+      "pos": "N"
+    },
+    {
+      "context": "個人資料",
+      "vocabulary": "我們",
+      "pinyin": "wŏmen",
+      "pos": "N"
+    },
+    {
+      "context": "個人資料",
+      "vocabulary": "你們/妳們",
+      "pinyin": "nĭmen",
+      "pos": "N"
+    },
+    {
+      "context": "個人資料",
+      "vocabulary": "他們/她們",
+      "pinyin": "tāmen",
+      "pos": "N"
+    },
+    {
+      "context": "個人資料",
+      "vocabulary": "您",
+      "pinyin": "nín",
+      "pos": "N"
+    },
+    {
+      "context": "個人資料",
+      "vocabulary": "誰",
+      "pinyin": "shéi",
+      "pos": "N"
+    },
+    {
+      "context": "個人資料",
+      "vocabulary": "姓名",
+      "pinyin": "xìngmíng",
+      "pos": "N"
+    },
+    {
+      "context": "個人資料",
+      "vocabulary": "人",
+      "pinyin": "rén",
+      "pos": "N"
+    },
+    {
+      "context": "個人資料",
+      "vocabulary": "國",
+      "pinyin": "guó",
+      "pos": "N"
+    },
+    {
+      "context": "個人資料",
+      "vocabulary": "中國",
+      "pinyin": "zhōngguó",
+      "pos": "N"
+    },
+    {
+      "context": "個人資料",
+      "vocabulary": "美國",
+      "pinyin": "měiguó",
+      "pos": "N"
+    },
+    {
+      "context": "個人資料",
+      "vocabulary": "日本",
+      "pinyin": "rìběn",
+      "pos": "N"
+    },
+    {
+      "context": "個人資料",
+      "vocabulary": "台灣/臺灣",
+      "pinyin": "táiwān",
+      "pos": "N"
+    },
+    {
+      "context": "個人資料",
+      "vocabulary": "名字(˙ㄗ)",
+      "pinyin": "míngzi",
+      "pos": "N"
+    },
+    {
+      "context": "個人資料",
+      "vocabulary": "家",
+      "pinyin": "jiā",
+      "pos": "N"
+    },
+    {
+      "context": "個人資料",
+      "vocabulary": "電話",
+      "pinyin": "diànhuà",
+      "pos": "N"
+    },
+    {
+      "context": "個人資料",
+      "vocabulary": "時間",
+      "pinyin": "shíjiān",
+      "pos": "N"
+    },
+    {
+      "context": "個人資料",
+      "vocabulary": "小時",
+      "pinyin": "xiăoshí",
+      "pos": "N"
+    },
+    {
+      "context": "個人資料",
+      "vocabulary": "現在",
+      "pinyin": "xiànzài",
+      "pos": "N"
+    },
+    {
+      "context": "個人資料",
+      "vocabulary": "今年",
+      "pinyin": "jīnnián",
+      "pos": "N"
+    },
+    {
+      "context": "個人資料",
+      "vocabulary": "今天",
+      "pinyin": "jīntiān",
+      "pos": "N"
+    },
+    {
+      "context": "個人資料",
+      "vocabulary": "明天",
+      "pinyin": "míngtiān",
+      "pos": "N"
+    },
+    {
+      "context": "個人資料",
+      "vocabulary": "昨天",
+      "pinyin": "zuótiān",
+      "pos": "N"
+    },
+    {
+      "context": "個人資料",
+      "vocabulary": "早上",
+      "pinyin": "zăoshàng",
+      "pos": "N"
+    },
+    {
+      "context": "個人資料",
+      "vocabulary": "上午",
+      "pinyin": "shàngwŭ",
+      "pos": "N"
+    },
+    {
+      "context": "個人資料",
+      "vocabulary": "中午",
+      "pinyin": "zhōngwŭ",
+      "pos": "N"
+    },
+    {
+      "context": "個人資料",
+      "vocabulary": "下午",
+      "pinyin": "xiàwŭ",
+      "pos": "N"
+    },
+    {
+      "context": "個人資料",
+      "vocabulary": "晚上",
+      "pinyin": "wănshàng",
+      "pos": "N"
+    },
+    {
+      "context": "個人資料",
+      "vocabulary": "一",
+      "pinyin": "yī",
+      "pos": "N"
+    },
+    {
+      "context": "個人資料",
+      "vocabulary": "二",
+      "pinyin": "èr",
+      "pos": "N"
+    },
+    {
+      "context": "個人資料",
+      "vocabulary": "三",
+      "pinyin": "sān",
+      "pos": "N"
+    },
+    {
+      "context": "個人資料",
+      "vocabulary": "四",
+      "pinyin": "sì",
+      "pos": "N"
+    },
+    {
+      "context": "個人資料",
+      "vocabulary": "五",
+      "pinyin": "wŭ",
+      "pos": "N"
+    },
+    {
+      "context": "個人資料",
+      "vocabulary": "六",
+      "pinyin": "liù",
+      "pos": "N"
+    },
+    {
+      "context": "個人資料",
+      "vocabulary": "七",
+      "pinyin": "qī",
+      "pos": "N"
+    },
+    {
+      "context": "個人資料",
+      "vocabulary": "八",
+      "pinyin": "bā",
+      "pos": "N"
+    },
+    {
+      "context": "個人資料",
+      "vocabulary": "九",
+      "pinyin": "jiŭ",
+      "pos": "N"
+    },
+    {
+      "context": "個人資料",
+      "vocabulary": "十",
+      "pinyin": "shí",
+      "pos": "N"
+    },
+    {
+      "context": "個人資料",
+      "vocabulary": "兩",
+      "pinyin": "liăng",
+      "pos": "N"
+    },
+    {
+      "context": "個人資料",
+      "vocabulary": "時候",
+      "pinyin": "shíhòu",
+      "pos": "N"
+    },
+    {
+      "context": "個人資料",
+      "vocabulary": "百",
+      "pinyin": "băi",
+      "pos": "N"
+    },
+    {
+      "context": "個人資料",
+      "vocabulary": "半",
+      "pinyin": "bàn",
+      "pos": "N"
+    },
+    {
+      "context": "個人資料",
+      "vocabulary": "千",
+      "pinyin": "qiān",
+      "pos": "N"
+    },
+    {
+      "context": "個人資料",
+      "vocabulary": "爸爸/爸",
+      "pinyin": "bàba/bà",
+      "pos": "N"
+    },
+    {
+      "context": "個人資料",
+      "vocabulary": "媽媽/媽",
+      "pinyin": "māma/mā",
+      "pos": "N"
+    },
+    {
+      "context": "個人資料",
+      "vocabulary": "哥哥/哥",
+      "pinyin": "gēge/gē",
+      "pos": "N"
+    },
+    {
+      "context": "個人資料",
+      "vocabulary": "弟弟/弟",
+      "pinyin": "dìdi/dì",
+      "pos": "N"
+    },
+    {
+      "context": "個人資料",
+      "vocabulary": "姊姊/姐姐/姊/姐",
+      "pinyin": "jiějie/jiě",
+      "pos": "N"
+    },
+    {
+      "context": "個人資料",
+      "vocabulary": "妹妹/妹",
+      "pinyin": "mèimei/mèi",
+      "pos": "N"
+    },
+    {
+      "context": "個人資料",
+      "vocabulary": "小孩(子)",
+      "pinyin": "xiăohái(zi)",
+      "pos": "N"
+    },
+    {
+      "context": "個人資料",
+      "vocabulary": "的",
+      "pinyin": "de",
+      "pos": "Ptc"
+    },
+    {
+      "context": "個人資料",
+      "vocabulary": "第",
+      "pinyin": "dì",
+      "pos": "Det"
+    },
+    {
+      "context": "個人資料",
+      "vocabulary": "分",
+      "pinyin": "fēn",
+      "pos": "M"
+    },
+    {
+      "context": "個人資料",
+      "vocabulary": "點",
+      "pinyin": "diăn",
+      "pos": "M"
+    },
+    {
+      "context": "個人資料",
+      "vocabulary": "個",
+      "pinyin": "ge",
+      "pos": "M"
+    },
+    {
+      "context": "個人資料",
+      "vocabulary": "歲",
+      "pinyin": "suì",
+      "pos": "M"
+    },
+    {
+      "context": "個人資料",
+      "vocabulary": "年",
+      "pinyin": "nián",
+      "pos": "M"
+    },
+    {
+      "context": "個人資料",
+      "vocabulary": "住",
+      "pinyin": "zhù",
+      "pos": "V"
+    },
+    {
+      "context": "個人資料",
+      "vocabulary": "來",
+      "pinyin": "lái",
+      "pos": "V"
+    },
+    {
+      "context": "個人資料",
+      "vocabulary": "是",
+      "pinyin": "shì",
+      "pos": "Vst"
+    },
+    {
+      "context": "個人資料",
+      "vocabulary": "姓",
+      "pinyin": "xìng",
+      "pos": "Vst"
+    },
+    {
+      "context": "個人資料",
+      "vocabulary": "覺得",
+      "pinyin": "juéde",
+      "pos": "Vst"
+    },
+    {
+      "context": "個人資料",
+      "vocabulary": "喜歡",
+      "pinyin": "xĭhuān",
+      "pos": "Vst"
+    },
+    {
+      "context": "個人資料",
+      "vocabulary": "打電話",
+      "pinyin": "dădiànhuà",
+      "pos": "Vi"
+    },
+    {
+      "context": "個人資料",
+      "vocabulary": "漂亮",
+      "pinyin": "piàolìang",
+      "pos": "Vs"
+    },
+    {
+      "context": "個人資料",
+      "vocabulary": "高",
+      "pinyin": "gāo",
+      "pos": "Vs"
+    },
+    {
+      "context": "個人資料",
+      "vocabulary": "老",
+      "pinyin": "lăo",
+      "pos": "Vs"
+    },
+    {
+      "context": "個人資料",
+      "vocabulary": "好",
+      "pinyin": "hăo",
+      "pos": "Adv"
+    },
+    {
+      "context": "個人資料",
+      "vocabulary": "很",
+      "pinyin": "hěn",
+      "pos": "Adv"
+    },
+    {
+      "context": "個人資料",
+      "vocabulary": "真",
+      "pinyin": "zhēn",
+      "pos": "Adv"
+    },
+    {
+      "context": "工作",
+      "vocabulary": "電腦",
+      "pinyin": "diànnăo",
+      "pos": "N"
+    },
+    {
+      "context": "工作",
+      "vocabulary": "老師",
+      "pinyin": "lăoshī",
+      "pos": "N"
+    },
+    {
+      "context": "工作",
+      "vocabulary": "買",
+      "pinyin": "măi",
+      "pos": "V"
+    },
+    {
+      "context": "工作",
+      "vocabulary": "忙",
+      "pinyin": "máng",
+      "pos": "Vs"
+    },
+    {
+      "context": "教育",
+      "vocabulary": "學生",
+      "pinyin": "xuéshēng",
+      "pos": "N"
+    },
+    {
+      "context": "教育",
+      "vocabulary": "大學",
+      "pinyin": "dàxué",
+      "pos": "N"
+    },
+    {
+      "context": "教育",
+      "vocabulary": "學校",
+      "pinyin": "xuéxiào",
+      "pos": "N"
+    },
+    {
+      "context": "教育",
+      "vocabulary": "中文",
+      "pinyin": "zhōngwén",
+      "pos": "N"
+    },
+    {
+      "context": "教育",
+      "vocabulary": "同學",
+      "pinyin": "tóngxué",
+      "pos": "N"
+    },
+    {
+      "context": "教育",
+      "vocabulary": "字",
+      "pinyin": "zì",
+      "pos": "N"
+    },
+    {
+      "context": "教育",
+      "vocabulary": "筆",
+      "pinyin": "bĭ",
+      "pos": "N"
+    },
+    {
+      "context": "教育",
+      "vocabulary": "學",
+      "pinyin": "xué",
+      "pos": "V"
+    },
+    {
+      "context": "教育",
+      "vocabulary": "問",
+      "pinyin": "wèn",
+      "pos": "V"
+    },
+    {
+      "context": "教育",
+      "vocabulary": "說",
+      "pinyin": "shuō",
+      "pos": "V"
+    },
+    {
+      "context": "教育",
+      "vocabulary": "寫",
+      "pinyin": "xiě",
+      "pos": "V"
+    },
+    {
+      "context": "教育",
+      "vocabulary": "聽",
+      "pinyin": "tīng",
+      "pos": "V"
+    },
+    {
+      "context": "教育",
+      "vocabulary": "對",
+      "pinyin": "duì",
+      "pos": "Vs"
+    },
+    {
+      "context": "教育",
+      "vocabulary": "能",
+      "pinyin": "néng",
+      "pos": "Vaux"
+    },
+    {
+      "context": "教育",
+      "vocabulary": "可以",
+      "pinyin": "kěyĭ",
+      "pos": "Vaux"
+    },
+    {
+      "context": "教育",
+      "vocabulary": "上課",
+      "pinyin": "shàngkè",
+      "pos": "V-sep"
+    },
+    {
+      "context": "教育",
+      "vocabulary": "知道",
+      "pinyin": "zhīdào",
+      "pos": "Vst"
+    },
+    {
+      "context": "房屋與家庭、環境",
+      "vocabulary": "電視(機)",
+      "pinyin": "diànshì(jī)",
+      "pos": "N"
+    },
+    {
+      "context": "房屋與家庭、環境",
+      "vocabulary": "水",
+      "pinyin": "shuĭ",
+      "pos": "N"
+    },
+    {
+      "context": "日常生活",
+      "vocabulary": "久",
+      "pinyin": "jiŭ",
+      "pos": "Vs-pred"
+    },
+    {
+      "context": "閒暇時間、娛樂",
+      "vocabulary": "早",
+      "pinyin": "zăo",
+      "pos": "Vs"
+    },
+    {
+      "context": "閒暇時間、娛樂",
+      "vocabulary": "再",
+      "pinyin": "zài",
+      "pos": "Adv"
+    },
+    {
+      "context": "閒暇時間、娛樂",
+      "vocabulary": "書",
+      "pinyin": "shū",
+      "pos": "N"
+    },
+    {
+      "context": "閒暇時間、娛樂",
+      "vocabulary": "電影",
+      "pinyin": "diànyĭng",
+      "pos": "N"
+    },
+    {
+      "context": "閒暇時間、娛樂",
+      "vocabulary": "以前",
+      "pinyin": "yĭqián",
+      "pos": "N"
+    },
+    {
+      "context": "閒暇時間、娛樂",
+      "vocabulary": "以後",
+      "pinyin": "yĭhòu",
+      "pos": "N"
+    },
+    {
+      "context": "閒暇時間、娛樂",
+      "vocabulary": "走",
+      "pinyin": "zŏu",
+      "pos": "V"
+    },
+    {
+      "context": "閒暇時間、娛樂",
+      "vocabulary": "等",
+      "pinyin": "děng",
+      "pos": "V"
+    },
+    {
+      "context": "閒暇時間、娛樂",
+      "vocabulary": "看",
+      "pinyin": "kàn",
+      "pos": "V"
+    },
+    {
+      "context": "閒暇時間、娛樂",
+      "vocabulary": "就",
+      "pinyin": "jiù",
+      "pos": "Adv"
+    },
+    {
+      "context": "與他人的關係",
+      "vocabulary": "什麼/甚麼",
+      "pinyin": "shénme",
+      "pos": "N"
+    },
+    {
+      "context": "與他人的關係",
+      "vocabulary": "朋友",
+      "pinyin": "péngyŏu",
+      "pos": "N"
+    },
+    {
+      "context": "與他人的關係",
+      "vocabulary": "東西",
+      "pinyin": "dōngxi",
+      "pos": "N"
+    },
+    {
+      "context": "與他人的關係",
+      "vocabulary": "吧",
+      "pinyin": "ba",
+      "pos": "Ptc"
+    },
+    {
+      "context": "與他人的關係",
+      "vocabulary": "呢",
+      "pinyin": "ne",
+      "pos": "Ptc"
+    },
+    {
+      "context": "與他人的關係",
+      "vocabulary": "嗎",
+      "pinyin": "ma",
+      "pos": "Ptc"
+    },
+    {
+      "context": "與他人的關係",
+      "vocabulary": "找",
+      "pinyin": "zhăo",
+      "pos": "V"
+    },
+    {
+      "context": "與他人的關係",
+      "vocabulary": "做",
+      "pinyin": "zuò",
+      "pos": "V"
+    },
+    {
+      "context": "與他人的關係",
+      "vocabulary": "再見",
+      "pinyin": "zàijiàn",
+      "pos": "Vi"
+    },
+    {
+      "context": "與他人的關係",
+      "vocabulary": "怎麼樣",
+      "pinyin": "zěnmeyàng",
+      "pos": "Vs"
+    },
+    {
+      "context": "與他人的關係",
+      "vocabulary": "叫",
+      "pinyin": "jiào",
+      "pos": "Vst / V"
+    },
+    {
+      "context": "與他人的關係",
+      "vocabulary": "謝謝",
+      "pinyin": "xièxie",
+      "pos": "Vst"
+    },
+    {
+      "context": "與他人的關係",
+      "vocabulary": "對不起",
+      "pinyin": "duìbùqĭ",
+      "pos": null
+    },
+    {
+      "context": "與他人的關係",
+      "vocabulary": "請問",
+      "pinyin": "qĭngwèn",
+      "pos": null
+    },
+    {
+      "context": "旅行",
+      "vocabulary": "這",
+      "pinyin": "zhè",
+      "pos": "Det"
+    },
+    {
+      "context": "旅行",
+      "vocabulary": "那",
+      "pinyin": "nà",
+      "pos": "Det"
+    },
+    {
+      "context": "旅行",
+      "vocabulary": "公共汽車/公車",
+      "pinyin": "gōnggòngqìchē/gōngchē",
+      "pos": "N"
+    },
+    {
+      "context": "旅行",
+      "vocabulary": "車(子)",
+      "pinyin": "chē(zi)",
+      "pos": "N"
+    },
+    {
+      "context": "旅行",
+      "vocabulary": "到",
+      "pinyin": "dào",
+      "pos": "V"
+    },
+    {
+      "context": "旅行",
+      "vocabulary": "去",
+      "pinyin": "qù",
+      "pos": "V"
+    },
+    {
+      "context": "旅行",
+      "vocabulary": "回",
+      "pinyin": "huí",
+      "pos": "V"
+    },
+    {
+      "context": "旅行",
+      "vocabulary": "坐",
+      "pinyin": "zuò",
+      "pos": "Vi"
+    },
+    {
+      "context": "旅行",
+      "vocabulary": "這裡/這裏/這兒",
+      "pinyin": "zhèlĭ/zhèr",
+      "pos": "N"
+    },
+    {
+      "context": "旅行",
+      "vocabulary": "那裡/那裏/那兒",
+      "pinyin": "nàlĭ/nàr",
+      "pos": "N"
+    },
+    {
+      "context": "旅行",
+      "vocabulary": "哪裡/哪裏/哪兒",
+      "pinyin": "nălĭ/năr",
+      "pos": "N"
+    },
+    {
+      "context": "旅行",
+      "vocabulary": "開車",
+      "pinyin": "kāichē",
+      "pos": "V-sep"
+    },
+    {
+      "context": "購物",
+      "vocabulary": "錢",
+      "pinyin": "qián",
+      "pos": "N"
+    },
+    {
+      "context": "購物",
+      "vocabulary": "多少",
+      "pinyin": "duōshăo",
+      "pos": "N"
+    },
+    {
+      "context": "購物",
+      "vocabulary": "給",
+      "pinyin": "gěi",
+      "pos": "V"
+    },
+    {
+      "context": "購物",
+      "vocabulary": "貴",
+      "pinyin": "guì",
+      "pos": "Vs"
+    },
+    {
+      "context": "購物",
+      "vocabulary": "便宜",
+      "pinyin": "piányí",
+      "pos": "Vs"
+    },
+    {
+      "context": "購物",
+      "vocabulary": "大",
+      "pinyin": "dà",
+      "pos": "Vs"
+    },
+    {
+      "context": "購物",
+      "vocabulary": "小",
+      "pinyin": "xiăo",
+      "pos": "Vs"
+    },
+    {
+      "context": "購物",
+      "vocabulary": "難",
+      "pinyin": "nán",
+      "pos": "Vs"
+    },
+    {
+      "context": "購物",
+      "vocabulary": "容易",
+      "pinyin": "róngyì",
+      "pos": "Vs"
+    },
+    {
+      "context": "購物",
+      "vocabulary": "有",
+      "pinyin": "yŏu",
+      "pos": "Vst"
+    },
+    {
+      "context": "購物",
+      "vocabulary": "想",
+      "pinyin": "xiăng",
+      "pos": "Vst"
+    },
+    {
+      "context": "飲食",
+      "vocabulary": "幾",
+      "pinyin": "jĭ",
+      "pos": "Det"
+    },
+    {
+      "context": "飲食",
+      "vocabulary": "塊",
+      "pinyin": "kuài",
+      "pos": "M"
+    },
+    {
+      "context": "飲食",
+      "vocabulary": "位",
+      "pinyin": "wèi",
+      "pos": "M"
+    },
+    {
+      "context": "飲食",
+      "vocabulary": "飯",
+      "pinyin": "fàn",
+      "pos": "N"
+    },
+    {
+      "context": "飲食",
+      "vocabulary": "吃",
+      "pinyin": "chī",
+      "pos": "V"
+    },
+    {
+      "context": "飲食",
+      "vocabulary": "請",
+      "pinyin": "qĭng",
+      "pos": "V"
+    },
+    {
+      "context": "其他",
+      "vocabulary": "也",
+      "pinyin": "yě",
+      "pos": "Adv"
+    },
+    {
+      "context": "其他",
+      "vocabulary": "不",
+      "pinyin": "bù",
+      "pos": "Adv"
+    },
+    {
+      "context": "其他",
+      "vocabulary": "沒",
+      "pinyin": "méi",
+      "pos": "Adv"
+    },
+    {
+      "context": "其他",
+      "vocabulary": "都",
+      "pinyin": "dōu",
+      "pos": "Adv"
+    },
+    {
+      "context": "其他",
+      "vocabulary": "只",
+      "pinyin": "zhĭ",
+      "pos": "Adv"
+    },
+    {
+      "context": "其他",
+      "vocabulary": "可是",
+      "pinyin": "kěshì",
+      "pos": "Conj"
+    },
+    {
+      "context": "其他",
+      "vocabulary": "還是",
+      "pinyin": "háishì",
+      "pos": "Conj"
+    },
+    {
+      "context": "其他",
+      "vocabulary": "了",
+      "pinyin": "le",
+      "pos": "Ptc"
+    },
+    {
+      "context": "其他",
+      "vocabulary": "得",
+      "pinyin": "de",
+      "pos": "Ptc"
+    },
+    {
+      "context": "其他",
+      "vocabulary": "過",
+      "pinyin": "guò",
+      "pos": "Ptc"
+    },
+    {
+      "context": "其他",
+      "vocabulary": "沒有",
+      "pinyin": "méiyŏu",
+      "pos": "Ptc"
+    }
+  ],
+  "novice_2": [
+    {
+      "context": "個人資料",
+      "vocabulary": "男",
+      "pinyin": "nán",
+      "pos": "N"
+    },
+    {
+      "context": "個人資料",
+      "vocabulary": "女",
+      "pinyin": "nǚ",
+      "pos": "N"
+    },
+    {
+      "context": "個人資料",
+      "vocabulary": "孩子",
+      "pinyin": "háizi",
+      "pos": "N"
+    },
+    {
+      "context": "個人資料",
+      "vocabulary": "小姐",
+      "pinyin": "xiăojiě",
+      "pos": "N"
+    },
+    {
+      "context": "個人資料",
+      "vocabulary": "先生",
+      "pinyin": "xiānshēng",
+      "pos": "N"
+    },
+    {
+      "context": "個人資料",
+      "vocabulary": "太太",
+      "pinyin": "tàitai",
+      "pos": "N"
+    },
+    {
+      "context": "個人資料",
+      "vocabulary": "女兒",
+      "pinyin": "nǚér",
+      "pos": "N"
+    },
+    {
+      "context": "個人資料",
+      "vocabulary": "兒子",
+      "pinyin": "érzi",
+      "pos": "N"
+    },
+    {
+      "context": "個人資料",
+      "vocabulary": "大家",
+      "pinyin": "dàjiā",
+      "pos": "N"
+    },
+    {
+      "context": "個人資料",
+      "vocabulary": "路",
+      "pinyin": "lù",
+      "pos": "N"
+    },
+    {
+      "context": "個人資料",
+      "vocabulary": "手機",
+      "pinyin": "shŏujī",
+      "pos": "N"
+    },
+    {
+      "context": "個人資料",
+      "vocabulary": "明年",
+      "pinyin": "míngnián",
+      "pos": "N"
+    },
+    {
+      "context": "個人資料",
+      "vocabulary": "去年",
+      "pinyin": "qùnián",
+      "pos": "N"
+    },
+    {
+      "context": "個人資料",
+      "vocabulary": "生日",
+      "pinyin": "shēngrì",
+      "pos": "N"
+    },
+    {
+      "context": "個人資料",
+      "vocabulary": "月",
+      "pinyin": "yuè",
+      "pos": "N"
+    },
+    {
+      "context": "個人資料",
+      "vocabulary": "日",
+      "pinyin": "rì",
+      "pos": "N"
+    },
+    {
+      "context": "個人資料",
+      "vocabulary": "星期",
+      "pinyin": "xīngqí",
+      "pos": "N"
+    },
+    {
+      "context": "個人資料",
+      "vocabulary": "星期天/星期日",
+      "pinyin": "xīngqítiān/xīngqírì",
+      "pos": "N"
+    },
+    {
+      "context": "個人資料",
+      "vocabulary": "禮拜天",
+      "pinyin": "lĭbàitiān",
+      "pos": "N"
+    },
+    {
+      "context": "個人資料",
+      "vocabulary": "週末/周末",
+      "pinyin": "zhōumò",
+      "pos": "N"
+    },
+    {
+      "context": "個人資料",
+      "vocabulary": "號",
+      "pinyin": "hào",
+      "pos": "M"
+    },
+    {
+      "context": "個人資料",
+      "vocabulary": "天",
+      "pinyin": "tiān",
+      "pos": "N / M"
+    },
+    {
+      "context": "個人資料",
+      "vocabulary": "從",
+      "pinyin": "cóng",
+      "pos": "Prep"
+    },
+    {
+      "context": "個人資料",
+      "vocabulary": "在",
+      "pinyin": "zài",
+      "pos": "Prep / Vst"
+    },
+    {
+      "context": "個人資料",
+      "vocabulary": "愛",
+      "pinyin": "ài",
+      "pos": "Vst"
+    },
+    {
+      "context": "個人資料",
+      "vocabulary": "快樂",
+      "pinyin": "kuàilè",
+      "pos": "Vs"
+    },
+    {
+      "context": "個人資料",
+      "vocabulary": "太",
+      "pinyin": "tài",
+      "pos": "Adv"
+    },
+    {
+      "context": "個人資料",
+      "vocabulary": "公園",
+      "pinyin": "gōngyuán",
+      "pos": "N"
+    },
+    {
+      "context": "個人資料",
+      "vocabulary": "國家",
+      "pinyin": "guójiā",
+      "pos": "N"
+    },
+    {
+      "context": "個人資料",
+      "vocabulary": "分鐘",
+      "pinyin": "fēnzhōng",
+      "pos": "M"
+    },
+    {
+      "context": "個人資料",
+      "vocabulary": "家人",
+      "pinyin": "jiārén",
+      "pos": "N"
+    },
+    {
+      "context": "個人資料",
+      "vocabulary": "胖",
+      "pinyin": "pàng",
+      "pos": "Vs"
+    },
+    {
+      "context": "個人資料",
+      "vocabulary": "矮",
+      "pinyin": "ăi",
+      "pos": "Vs"
+    },
+    {
+      "context": "個人資料",
+      "vocabulary": "瘦",
+      "pinyin": "shòu",
+      "pos": "Vs"
+    },
+    {
+      "context": "個人資料",
+      "vocabulary": "萬",
+      "pinyin": "wàn",
+      "pos": "N"
+    },
+    {
+      "context": "個人資料",
+      "vocabulary": "鐘頭",
+      "pinyin": "zhōngtóu",
+      "pos": "N"
+    },
+    {
+      "context": "個人資料",
+      "vocabulary": "晚",
+      "pinyin": "wăn",
+      "pos": "N"
+    },
+    {
+      "context": "個人資料",
+      "vocabulary": "前天",
+      "pinyin": "qiántiān",
+      "pos": "N"
+    },
+    {
+      "context": "個人資料",
+      "vocabulary": "後天",
+      "pinyin": "hòutiān",
+      "pos": "N"
+    },
+    {
+      "context": "個人資料",
+      "vocabulary": "前年",
+      "pinyin": "qiánnián",
+      "pos": "N"
+    },
+    {
+      "context": "個人資料",
+      "vocabulary": "後年",
+      "pinyin": "hòunián",
+      "pos": "N"
+    },
+    {
+      "context": "個人資料",
+      "vocabulary": "自己",
+      "pinyin": "zìjĭ",
+      "pos": "N"
+    },
+    {
+      "context": "個人資料",
+      "vocabulary": "它",
+      "pinyin": "tā",
+      "pos": "N"
+    },
+    {
+      "context": "個人資料",
+      "vocabulary": "它們",
+      "pinyin": "tāmen",
+      "pos": "N"
+    },
+    {
+      "context": "個人資料",
+      "vocabulary": "最",
+      "pinyin": "zuì",
+      "pos": "Adv"
+    },
+    {
+      "context": "個人資料",
+      "vocabulary": "怕",
+      "pinyin": "pà",
+      "pos": "Vst"
+    },
+    {
+      "context": "個人資料",
+      "vocabulary": "美",
+      "pinyin": "měi",
+      "pos": "Vs"
+    },
+    {
+      "context": "個人資料",
+      "vocabulary": "應該/應",
+      "pinyin": "yīnggāi /yīng",
+      "pos": "Vaux"
+    },
+    {
+      "context": "個人資料",
+      "vocabulary": "真的",
+      "pinyin": "zhēnde",
+      "pos": "Adv"
+    },
+    {
+      "context": "個人資料",
+      "vocabulary": "非常",
+      "pinyin": "fēicháng",
+      "pos": "Adv"
+    },
+    {
+      "context": "工作",
+      "vocabulary": "工作",
+      "pinyin": "gōngzuò",
+      "pos": "N"
+    },
+    {
+      "context": "工作",
+      "vocabulary": "醫生/醫師",
+      "pinyin": "yīshēng/yīshī",
+      "pos": "N"
+    },
+    {
+      "context": "教育",
+      "vocabulary": "一點/一點兒/一點點",
+      "pinyin": "yīdiăn/yīdiănr/yīdiăndiăn",
+      "pos": "Det"
+    },
+    {
+      "context": "教育",
+      "vocabulary": "一些",
+      "pinyin": "yīxiē",
+      "pos": "Det"
+    },
+    {
+      "context": "教育",
+      "vocabulary": "本",
+      "pinyin": "běn",
+      "pos": "M"
+    },
+    {
+      "context": "教育",
+      "vocabulary": "張",
+      "pinyin": "zhāng",
+      "pos": "M"
+    },
+    {
+      "context": "教育",
+      "vocabulary": "英文",
+      "pinyin": "yīngwén",
+      "pos": "N"
+    },
+    {
+      "context": "教育",
+      "vocabulary": "紙",
+      "pinyin": "zhĭ",
+      "pos": "N"
+    },
+    {
+      "context": "教育",
+      "vocabulary": "問題",
+      "pinyin": "wèntí",
+      "pos": "N"
+    },
+    {
+      "context": "教育",
+      "vocabulary": "意思",
+      "pinyin": "yìsi",
+      "pos": "N"
+    },
+    {
+      "context": "教育",
+      "vocabulary": "餐廳/飯館",
+      "pinyin": "cāntīng/fànguăn",
+      "pos": "N"
+    },
+    {
+      "context": "教育",
+      "vocabulary": "畫/畫兒",
+      "pinyin": "huà/huàr",
+      "pos": "V / N"
+    },
+    {
+      "context": "教育",
+      "vocabulary": "讀",
+      "pinyin": "dú",
+      "pos": "V"
+    },
+    {
+      "context": "教育",
+      "vocabulary": "會",
+      "pinyin": "huì",
+      "pos": "Vaux"
+    },
+    {
+      "context": "教育",
+      "vocabulary": "為什麼",
+      "pinyin": "wèishénme",
+      "pos": "Vs"
+    },
+    {
+      "context": "教育",
+      "vocabulary": "下課",
+      "pinyin": "xiàkè",
+      "pos": "V-sep"
+    },
+    {
+      "context": "教育",
+      "vocabulary": "說話",
+      "pinyin": "shuōhuà",
+      "pos": "V-sep"
+    },
+    {
+      "context": "教育",
+      "vocabulary": "考試",
+      "pinyin": "kăoshì",
+      "pos": "V-sep / N"
+    },
+    {
+      "context": "教育",
+      "vocabulary": "懂",
+      "pinyin": "dŏng",
+      "pos": "Vst"
+    },
+    {
+      "context": "教育",
+      "vocabulary": "念/唸",
+      "pinyin": "niàn",
+      "pos": "V"
+    },
+    {
+      "context": "教育",
+      "vocabulary": "課",
+      "pinyin": "kè",
+      "pos": "N"
+    },
+    {
+      "context": "教育",
+      "vocabulary": "教",
+      "pinyin": "jiāo",
+      "pos": "V"
+    },
+    {
+      "context": "教育",
+      "vocabulary": "告訴",
+      "pinyin": "gàosù",
+      "pos": "V"
+    },
+    {
+      "context": "教育",
+      "vocabulary": "錯",
+      "pinyin": "cuò",
+      "pos": "Vp"
+    },
+    {
+      "context": "教育",
+      "vocabulary": "功課",
+      "pinyin": "gōngkè",
+      "pos": "N"
+    },
+    {
+      "context": "教育",
+      "vocabulary": "教室",
+      "pinyin": "jiàoshì",
+      "pos": "N"
+    },
+    {
+      "context": "教育",
+      "vocabulary": "句子",
+      "pinyin": "jùzi",
+      "pos": "N"
+    },
+    {
+      "context": "教育",
+      "vocabulary": "休息",
+      "pinyin": "xiūxí",
+      "pos": "Vi"
+    },
+    {
+      "context": "房屋與家庭、環境",
+      "vocabulary": "房(子)",
+      "pinyin": "fáng(zi)",
+      "pos": "N"
+    },
+    {
+      "context": "房屋與家庭、環境",
+      "vocabulary": "房間",
+      "pinyin": "fángjiān",
+      "pos": "N"
+    },
+    {
+      "context": "房屋與家庭、環境",
+      "vocabulary": "樓",
+      "pinyin": "lóu",
+      "pos": "M"
+    },
+    {
+      "context": "房屋與家庭、環境",
+      "vocabulary": "門",
+      "pinyin": "mén",
+      "pos": "N"
+    },
+    {
+      "context": "房屋與家庭、環境",
+      "vocabulary": "門口",
+      "pinyin": "ménkŏu",
+      "pos": "N"
+    },
+    {
+      "context": "房屋與家庭、環境",
+      "vocabulary": "桌(子)",
+      "pinyin": "zhuō(zi)",
+      "pos": "N"
+    },
+    {
+      "context": "房屋與家庭、環境",
+      "vocabulary": "椅(子)",
+      "pinyin": "yĭ(zi)",
+      "pos": "N"
+    },
+    {
+      "context": "房屋與家庭、環境",
+      "vocabulary": "床",
+      "pinyin": "chuáng",
+      "pos": "N"
+    },
+    {
+      "context": "房屋與家庭、環境",
+      "vocabulary": "開",
+      "pinyin": "kāi",
+      "pos": "V"
+    },
+    {
+      "context": "房屋與家庭、環境",
+      "vocabulary": "低",
+      "pinyin": "dī",
+      "pos": "Vs"
+    },
+    {
+      "context": "房屋與家庭、環境",
+      "vocabulary": "不錯",
+      "pinyin": "bùcuò",
+      "pos": "Vs"
+    },
+    {
+      "context": "房屋與家庭、環境",
+      "vocabulary": "天氣",
+      "pinyin": "tiānqì",
+      "pos": "N"
+    },
+    {
+      "context": "房屋與家庭、環境",
+      "vocabulary": "空氣",
+      "pinyin": "kōngqì",
+      "pos": "N"
+    },
+    {
+      "context": "房屋與家庭、環境",
+      "vocabulary": "冷",
+      "pinyin": "lěng",
+      "pos": "Vs"
+    },
+    {
+      "context": "房屋與家庭、環境",
+      "vocabulary": "熱",
+      "pinyin": "rè",
+      "pos": "Vs"
+    },
+    {
+      "context": "房屋與家庭、環境",
+      "vocabulary": "雨",
+      "pinyin": "yŭ",
+      "pos": "N"
+    },
+    {
+      "context": "房屋與家庭、環境",
+      "vocabulary": "下雨",
+      "pinyin": "xiàyŭ",
+      "pos": "V-sep"
+    },
+    {
+      "context": "房屋與家庭、環境",
+      "vocabulary": "風",
+      "pinyin": "fēng",
+      "pos": "N"
+    },
+    {
+      "context": "房屋與家庭、環境",
+      "vocabulary": "山",
+      "pinyin": "shān",
+      "pos": "N"
+    },
+    {
+      "context": "房屋與家庭、環境",
+      "vocabulary": "花/花兒",
+      "pinyin": "huā/huār",
+      "pos": "N"
+    },
+    {
+      "context": "房屋與家庭、環境",
+      "vocabulary": "枝",
+      "pinyin": "zhī",
+      "pos": "M"
+    },
+    {
+      "context": "房屋與家庭、環境",
+      "vocabulary": "魚",
+      "pinyin": "yú",
+      "pos": "N"
+    },
+    {
+      "context": "房屋與家庭、環境",
+      "vocabulary": "雞",
+      "pinyin": "jī",
+      "pos": "N"
+    },
+    {
+      "context": "房屋與家庭、環境",
+      "vocabulary": "牛",
+      "pinyin": "niú",
+      "pos": "N"
+    },
+    {
+      "context": "房屋與家庭、環境",
+      "vocabulary": "豬",
+      "pinyin": "zhū",
+      "pos": "N"
+    },
+    {
+      "context": "日常生活",
+      "vocabulary": "咖啡",
+      "pinyin": "kāfēi",
+      "pos": "N"
+    },
+    {
+      "context": "日常生活",
+      "vocabulary": "茶",
+      "pinyin": "chá",
+      "pos": "N"
+    },
+    {
+      "context": "日常生活",
+      "vocabulary": "用",
+      "pinyin": "yòng",
+      "pos": "V"
+    },
+    {
+      "context": "日常生活",
+      "vocabulary": "穿",
+      "pinyin": "chuān",
+      "pos": "V"
+    },
+    {
+      "context": "日常生活",
+      "vocabulary": "起床",
+      "pinyin": "qĭchuáng",
+      "pos": "Vp"
+    },
+    {
+      "context": "日常生活",
+      "vocabulary": "方便",
+      "pinyin": "fāngbiàn",
+      "pos": "Vs"
+    },
+    {
+      "context": "日常生活",
+      "vocabulary": "睡覺",
+      "pinyin": "shuìjiào",
+      "pos": "V-sep"
+    },
+    {
+      "context": "日常生活",
+      "vocabulary": "起來",
+      "pinyin": "qĭlái",
+      "pos": "Vp"
+    },
+    {
+      "context": "閒暇時間、娛樂",
+      "vocabulary": "先",
+      "pinyin": "xiān",
+      "pos": "Adv"
+    },
+    {
+      "context": "閒暇時間、娛樂",
+      "vocabulary": "常常/常",
+      "pinyin": "chángcháng/cháng",
+      "pos": "Adv"
+    },
+    {
+      "context": "閒暇時間、娛樂",
+      "vocabulary": "每",
+      "pinyin": "měi",
+      "pos": "Det"
+    },
+    {
+      "context": "閒暇時間、娛樂",
+      "vocabulary": "打",
+      "pinyin": "dă",
+      "pos": "V"
+    },
+    {
+      "context": "閒暇時間、娛樂",
+      "vocabulary": "玩",
+      "pinyin": "wán",
+      "pos": "V"
+    },
+    {
+      "context": "閒暇時間、娛樂",
+      "vocabulary": "運動",
+      "pinyin": "yùndòng",
+      "pos": "Vi / N"
+    },
+    {
+      "context": "閒暇時間、娛樂",
+      "vocabulary": "走路",
+      "pinyin": "zŏulù",
+      "pos": "V-sep"
+    },
+    {
+      "context": "閒暇時間、娛樂",
+      "vocabulary": "唱歌",
+      "pinyin": "chànggē",
+      "pos": "V-sep"
+    },
+    {
+      "context": "閒暇時間、娛樂",
+      "vocabulary": "跳",
+      "pinyin": "tiào",
+      "pos": "Vi"
+    },
+    {
+      "context": "閒暇時間、娛樂",
+      "vocabulary": "還",
+      "pinyin": "hái",
+      "pos": "Adv"
+    },
+    {
+      "context": "閒暇時間、娛樂",
+      "vocabulary": "唱",
+      "pinyin": "chàng",
+      "pos": "V"
+    },
+    {
+      "context": "閒暇時間、娛樂",
+      "vocabulary": "歌",
+      "pinyin": "gē",
+      "pos": "N"
+    },
+    {
+      "context": "閒暇時間、娛樂",
+      "vocabulary": "跳舞",
+      "pinyin": "tiàowŭ",
+      "pos": "V-sep"
+    },
+    {
+      "context": "閒暇時間、娛樂",
+      "vocabulary": "又",
+      "pinyin": "yòu",
+      "pos": "Adv"
+    },
+    {
+      "context": "閒暇時間、娛樂",
+      "vocabulary": "球",
+      "pinyin": "qiú",
+      "pos": "N"
+    },
+    {
+      "context": "與他人的關係",
+      "vocabulary": "介紹",
+      "pinyin": "jièshào",
+      "pos": "V"
+    },
+    {
+      "context": "與他人的關係",
+      "vocabulary": "沒關係(˙ㄒㄧ)",
+      "pinyin": "méiguānxi",
+      "pos": "Vs"
+    },
+    {
+      "context": "與他人的關係",
+      "vocabulary": "事/事兒",
+      "pinyin": "shì/shìr",
+      "pos": "N"
+    },
+    {
+      "context": "與他人的關係",
+      "vocabulary": "怎麼",
+      "pinyin": "zěnme",
+      "pos": "Adv"
+    },
+    {
+      "context": "旅行",
+      "vocabulary": "哪",
+      "pinyin": "nă",
+      "pos": "Det"
+    },
+    {
+      "context": "旅行",
+      "vocabulary": "裡面/裏面",
+      "pinyin": "lĭmiàn",
+      "pos": "N"
+    },
+    {
+      "context": "旅行",
+      "vocabulary": "上(面)",
+      "pinyin": "shàng(miàn)",
+      "pos": "N"
+    },
+    {
+      "context": "旅行",
+      "vocabulary": "下(面)",
+      "pinyin": "xià(miàn)",
+      "pos": "N"
+    },
+    {
+      "context": "旅行",
+      "vocabulary": "外(面)",
+      "pinyin": "wài(miàn)",
+      "pos": "N"
+    },
+    {
+      "context": "旅行",
+      "vocabulary": "外頭(˙ㄊㄡ)",
+      "pinyin": "wàitou",
+      "pos": "N"
+    },
+    {
+      "context": "旅行",
+      "vocabulary": "前(面)",
+      "pinyin": "qián(miàn)",
+      "pos": "N"
+    },
+    {
+      "context": "旅行",
+      "vocabulary": "後(面)",
+      "pinyin": "hòu(miàn)",
+      "pos": "N"
+    },
+    {
+      "context": "旅行",
+      "vocabulary": "左(邊)",
+      "pinyin": "zuŏ(biān)",
+      "pos": "N"
+    },
+    {
+      "context": "旅行",
+      "vocabulary": "右(邊)",
+      "pinyin": "yòu(biān)",
+      "pos": "N"
+    },
+    {
+      "context": "旅行",
+      "vocabulary": "旁(邊)",
+      "pinyin": "páng(biān)",
+      "pos": "N"
+    },
+    {
+      "context": "旅行",
+      "vocabulary": "裡/裏",
+      "pinyin": "lĭ",
+      "pos": "N"
+    },
+    {
+      "context": "旅行",
+      "vocabulary": "中",
+      "pinyin": "zhōng",
+      "pos": "N"
+    },
+    {
+      "context": "旅行",
+      "vocabulary": "地方",
+      "pinyin": "dìfāng",
+      "pos": "N"
+    },
+    {
+      "context": "旅行",
+      "vocabulary": "附近",
+      "pinyin": "fùjìn",
+      "pos": "N"
+    },
+    {
+      "context": "旅行",
+      "vocabulary": "帶",
+      "pinyin": "dài",
+      "pos": "V"
+    },
+    {
+      "context": "旅行",
+      "vocabulary": "拿",
+      "pinyin": "ná",
+      "pos": "V"
+    },
+    {
+      "context": "旅行",
+      "vocabulary": "站",
+      "pinyin": "zhàn",
+      "pos": "Vi"
+    },
+    {
+      "context": "旅行",
+      "vocabulary": "快",
+      "pinyin": "kuài",
+      "pos": "Vs"
+    },
+    {
+      "context": "旅行",
+      "vocabulary": "慢",
+      "pinyin": "màn",
+      "pos": "Vs"
+    },
+    {
+      "context": "旅行",
+      "vocabulary": "計程車",
+      "pinyin": "jìchéngchē",
+      "pos": "N"
+    },
+    {
+      "context": "旅行",
+      "vocabulary": "火車",
+      "pinyin": "huŏchē",
+      "pos": "N"
+    },
+    {
+      "context": "旅行",
+      "vocabulary": "飛機",
+      "pinyin": "fēijī",
+      "pos": "N"
+    },
+    {
+      "context": "旅行",
+      "vocabulary": "輛",
+      "pinyin": "liàng",
+      "pos": "M"
+    },
+    {
+      "context": "旅行",
+      "vocabulary": "出",
+      "pinyin": "chū",
+      "pos": "V"
+    },
+    {
+      "context": "旅行",
+      "vocabulary": "進",
+      "pinyin": "jìn",
+      "pos": "V"
+    },
+    {
+      "context": "旅行",
+      "vocabulary": "外國",
+      "pinyin": "wàiguó",
+      "pos": "N"
+    },
+    {
+      "context": "健康及身體照護",
+      "vocabulary": "手",
+      "pinyin": "shŏu",
+      "pos": "N"
+    },
+    {
+      "context": "健康及身體照護",
+      "vocabulary": "腳",
+      "pinyin": "jiăo",
+      "pos": "N"
+    },
+    {
+      "context": "健康及身體照護",
+      "vocabulary": "身體",
+      "pinyin": "shēntĭ",
+      "pos": "N"
+    },
+    {
+      "context": "健康及身體照護",
+      "vocabulary": "眼睛",
+      "pinyin": "yănjīng",
+      "pos": "N"
+    },
+    {
+      "context": "健康及身體照護",
+      "vocabulary": "鼻(子)",
+      "pinyin": "bí(zi)",
+      "pos": "N"
+    },
+    {
+      "context": "健康及身體照護",
+      "vocabulary": "藥",
+      "pinyin": "yào",
+      "pos": "N"
+    },
+    {
+      "context": "健康及身體照護",
+      "vocabulary": "累",
+      "pinyin": "lèi",
+      "pos": "Vs"
+    },
+    {
+      "context": "健康及身體照護",
+      "vocabulary": "頭",
+      "pinyin": "tóu",
+      "pos": "N"
+    },
+    {
+      "context": "健康及身體照護",
+      "vocabulary": "耳朵",
+      "pinyin": "ěrduo",
+      "pos": "N"
+    },
+    {
+      "context": "健康及身體照護",
+      "vocabulary": "感冒",
+      "pinyin": "gănmào",
+      "pos": "Vp"
+    },
+    {
+      "context": "健康及身體照護",
+      "vocabulary": "生病",
+      "pinyin": "shēngbìng",
+      "pos": "Vp-sep"
+    },
+    {
+      "context": "健康及身體照護",
+      "vocabulary": "餓",
+      "pinyin": "è",
+      "pos": "Vs"
+    },
+    {
+      "context": "健康及身體照護",
+      "vocabulary": "痛",
+      "pinyin": "tòng",
+      "pos": "Vs"
+    },
+    {
+      "context": "健康及身體照護",
+      "vocabulary": "嘴巴/嘴",
+      "pinyin": "zuĭba/zuĭ",
+      "pos": "N"
+    },
+    {
+      "context": "健康及身體照護",
+      "vocabulary": "病",
+      "pinyin": "bìng",
+      "pos": "N"
+    },
+    {
+      "context": "健康及身體照護",
+      "vocabulary": "看病",
+      "pinyin": "kànbìng",
+      "pos": "V-sep"
+    },
+    {
+      "context": "購物",
+      "vocabulary": "元",
+      "pinyin": "yuán",
+      "pos": "M"
+    },
+    {
+      "context": "購物",
+      "vocabulary": "鞋(子)",
+      "pinyin": "xié(zi)",
+      "pos": "N"
+    },
+    {
+      "context": "購物",
+      "vocabulary": "衣服/衣",
+      "pinyin": "yīfú/yī",
+      "pos": "N"
+    },
+    {
+      "context": "購物",
+      "vocabulary": "比",
+      "pinyin": "bĭ",
+      "pos": "Prep"
+    },
+    {
+      "context": "購物",
+      "vocabulary": "要",
+      "pinyin": "yào",
+      "pos": "V / Vaux"
+    },
+    {
+      "context": "購物",
+      "vocabulary": "長",
+      "pinyin": "cháng",
+      "pos": "Vs"
+    },
+    {
+      "context": "購物",
+      "vocabulary": "新",
+      "pinyin": "xīn",
+      "pos": "Vs"
+    },
+    {
+      "context": "購物",
+      "vocabulary": "一樣",
+      "pinyin": "yīyàng",
+      "pos": "Vs"
+    },
+    {
+      "context": "購物",
+      "vocabulary": "見",
+      "pinyin": "jiàn",
+      "pos": "Vpt"
+    },
+    {
+      "context": "購物",
+      "vocabulary": "看見",
+      "pinyin": "kànjiɑn",
+      "pos": "V"
+    },
+    {
+      "context": "購物",
+      "vocabulary": "聽見",
+      "pinyin": "tīngjiàn",
+      "pos": "Vpt"
+    },
+    {
+      "context": "購物",
+      "vocabulary": "店",
+      "pinyin": "diàn",
+      "pos": "N"
+    },
+    {
+      "context": "購物",
+      "vocabulary": "短",
+      "pinyin": "duăn",
+      "pos": "Vs"
+    },
+    {
+      "context": "購物",
+      "vocabulary": "飽",
+      "pinyin": "băo",
+      "pos": "Vs"
+    },
+    {
+      "context": "購物",
+      "vocabulary": "舊",
+      "pinyin": "jiù",
+      "pos": "Vs"
+    },
+    {
+      "context": "購物",
+      "vocabulary": "像",
+      "pinyin": "xiàng",
+      "pos": "Vst"
+    },
+    {
+      "context": "購物",
+      "vocabulary": "一共/共",
+      "pinyin": "yīgòng /gòng",
+      "pos": "Adv"
+    },
+    {
+      "context": "飲食",
+      "vocabulary": "夠",
+      "pinyin": "gòu",
+      "pos": "Vs-pred"
+    },
+    {
+      "context": "飲食",
+      "vocabulary": "筷(子)",
+      "pinyin": "kuài(zi)",
+      "pos": "N"
+    },
+    {
+      "context": "飲食",
+      "vocabulary": "件",
+      "pinyin": "jiàn",
+      "pos": "M"
+    },
+    {
+      "context": "飲食",
+      "vocabulary": "杯",
+      "pinyin": "bēi",
+      "pos": "M"
+    },
+    {
+      "context": "飲食",
+      "vocabulary": "杯(子)",
+      "pinyin": "bēi(zi)",
+      "pos": "N"
+    },
+    {
+      "context": "飲食",
+      "vocabulary": "菜",
+      "pinyin": "cài",
+      "pos": "N"
+    },
+    {
+      "context": "飲食",
+      "vocabulary": "肉",
+      "pinyin": "ròu",
+      "pos": "N"
+    },
+    {
+      "context": "飲食",
+      "vocabulary": "酒",
+      "pinyin": "jiŭ",
+      "pos": "N"
+    },
+    {
+      "context": "飲食",
+      "vocabulary": "喝",
+      "pinyin": "hē",
+      "pos": "V"
+    },
+    {
+      "context": "飲食",
+      "vocabulary": "少",
+      "pinyin": "shăo",
+      "pos": "Vs-pred"
+    },
+    {
+      "context": "飲食",
+      "vocabulary": "多",
+      "pinyin": "duō",
+      "pos": "Vs-pred / Adv"
+    },
+    {
+      "context": "飲食",
+      "vocabulary": "小吃",
+      "pinyin": "xiăochī",
+      "pos": "N"
+    },
+    {
+      "context": "飲食",
+      "vocabulary": "牛奶",
+      "pinyin": "niúnăi",
+      "pos": "N"
+    },
+    {
+      "context": "飲食",
+      "vocabulary": "蛋",
+      "pinyin": "dàn",
+      "pos": "N"
+    },
+    {
+      "context": "飲食",
+      "vocabulary": "餃(子)",
+      "pinyin": "jiăo(zi)",
+      "pos": "N"
+    },
+    {
+      "context": "飲食",
+      "vocabulary": "麵",
+      "pinyin": "miàn",
+      "pos": "N"
+    },
+    {
+      "context": "飲食",
+      "vocabulary": "湯",
+      "pinyin": "tāng",
+      "pos": "N"
+    },
+    {
+      "context": "飲食",
+      "vocabulary": "包子",
+      "pinyin": "bāozi",
+      "pos": "N"
+    },
+    {
+      "context": "飲食",
+      "vocabulary": "蛋糕",
+      "pinyin": "dàngāo",
+      "pos": "N"
+    },
+    {
+      "context": "飲食",
+      "vocabulary": "麵包",
+      "pinyin": "miànbāo",
+      "pos": "N"
+    },
+    {
+      "context": "飲食",
+      "vocabulary": "水果",
+      "pinyin": "shuĭguŏ",
+      "pos": "N"
+    },
+    {
+      "context": "飲食",
+      "vocabulary": "香蕉",
+      "pinyin": "xiāngjiāo",
+      "pos": "N"
+    },
+    {
+      "context": "飲食",
+      "vocabulary": "食物",
+      "pinyin": "shíwù",
+      "pos": "N"
+    },
+    {
+      "context": "飲食",
+      "vocabulary": "飲料",
+      "pinyin": "yĭnliào",
+      "pos": "N"
+    },
+    {
+      "context": "飲食",
+      "vocabulary": "果汁",
+      "pinyin": "guŏzhī",
+      "pos": "N"
+    },
+    {
+      "context": "飲食",
+      "vocabulary": "甜",
+      "pinyin": "tián",
+      "pos": "Vs"
+    },
+    {
+      "context": "飲食",
+      "vocabulary": "菜單",
+      "pinyin": "càidān",
+      "pos": "N"
+    },
+    {
+      "context": "飲食",
+      "vocabulary": "巧克力",
+      "pinyin": "qiăokèlì",
+      "pos": "N"
+    },
+    {
+      "context": "飲食",
+      "vocabulary": "碗",
+      "pinyin": "wăn",
+      "pos": "N / M"
+    },
+    {
+      "context": "飲食",
+      "vocabulary": "冰",
+      "pinyin": "bīng",
+      "pos": "N"
+    },
+    {
+      "context": "其他",
+      "vocabulary": "一起",
+      "pinyin": "yīqĭ",
+      "pos": "Adv"
+    },
+    {
+      "context": "其他",
+      "vocabulary": "因為",
+      "pinyin": "yīnwèi",
+      "pos": "Conj"
+    },
+    {
+      "context": "其他",
+      "vocabulary": "和",
+      "pinyin": "hé",
+      "pos": "Conj"
+    },
+    {
+      "context": "其他",
+      "vocabulary": "所以",
+      "pinyin": "suŏyĭ",
+      "pos": "Conj"
+    },
+    {
+      "context": "其他",
+      "vocabulary": "跟",
+      "pinyin": "gēn",
+      "pos": "Conj"
+    },
+    {
+      "context": "其他",
+      "vocabulary": "一定",
+      "pinyin": "yīdìng",
+      "pos": "Adv"
+    },
+    {
+      "context": "其他",
+      "vocabulary": "可能",
+      "pinyin": "kěnéng",
+      "pos": "Vaux"
+    },
+    {
+      "context": "其他",
+      "vocabulary": "邊/邊兒",
+      "pinyin": "biān/biānr",
+      "pos": "N"
+    },
+    {
+      "context": "其他",
+      "vocabulary": "別",
+      "pinyin": "bié",
+      "pos": "Adv"
+    },
+    {
+      "context": "其他",
+      "vocabulary": "馬上",
+      "pinyin": "măshàng",
+      "pos": "Adv"
+    },
+    {
+      "context": "其他",
+      "vocabulary": "然後",
+      "pinyin": "ránhòu",
+      "pos": "Adv"
+    },
+    {
+      "context": "其他",
+      "vocabulary": "得",
+      "pinyin": "děi",
+      "pos": "Vpt"
+    },
+    {
+      "context": "其他",
+      "vocabulary": "著",
+      "pinyin": "zhe",
+      "pos": "Ptc"
+    },
+    {
+      "context": "其他",
+      "vocabulary": "有點/有一點/有一點兒",
+      "pinyin": "yŏudiăn/yŏuyīdiăn/yŏuyīdiănr",
+      "pos": "Adv"
+    }
+  ],
+  "total_count": 394
+}

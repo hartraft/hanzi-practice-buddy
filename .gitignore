@@ -1,0 +1,10 @@
+.aider*
+venv/
+__pycache__/
+.pytest_cache/
+*.pyc
+node_modules/
+android/.gradle/
+android/app/build/
+android/build/
+www/

@@ -204,9 +204,11 @@ function setupCharsFromVocab(){
   vocabEntries.forEach(entry => {
     const voc = converter(entry.vocabulary || '');
     voc.split('').forEach(c => {
-      charSet.add(c);
-      if(!charInfoMap[c]){
-        charInfoMap[c] = entry;
+      if (isHanzi(c)) {
+        charSet.add(c);
+        if(!charInfoMap[c]){
+          charInfoMap[c] = entry;
+        }
       }
     });
   });
@@ -215,6 +217,21 @@ function setupCharsFromVocab(){
   uniqueChars.forEach(c => allCharsSet.add(c));
   showChar();
   saveProgress();
+}
+
+function isHanzi(c){
+  const code = c.codePointAt(0);
+  // CJK Unified Ideographs + Extension A/B
+  if (code >= 0x4E00 && code <= 0x9FFF) return true;
+  if (code >= 0x3400 && code <= 0x4DBF) return true;
+  if (code >= 0x20000 && code <= 0x2A6DF) return true;
+  if (code >= 0x2A700 && code <= 0x2B73F) return true;
+  if (code >= 0x2B740 && code <= 0x2B81F) return true;
+  if (code >= 0x2B820 && code <= 0x2CEAF) return true;
+  // Traditional variant extensions
+  if (code >= 0xF900 && code <= 0xFAFF) return true;
+  if (code >= 0x2F800 && code <= 0x2FA1F) return true;
+  return false;
 }
 
 function loadWords(){

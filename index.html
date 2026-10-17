@@ -325,7 +325,10 @@ function showChar(){
   };
 
   writer = HanziWriter.create('writer', char, options);
-  writer.quiz({ onComplete: nextChar });
+  writer.quiz({
+    onComplete: nextChar,
+    showHintAfterMisses: prefs.noHint ? 9999 : 3
+  });
   updateStatsText();
   saveProgress();
   updateURL();

@@ -305,6 +305,7 @@ function showChar(){
   if(prefs.hidePrompt){
     els.char.textContent = '';
     els.pinyin.textContent = '';
+    els.vocabInfo.textContent = '';
   } else {
     els.char.textContent = char;
     try{
@@ -313,13 +314,13 @@ function showChar(){
       els.char.style.color = toneColors[tone];
       els.pinyin.textContent = pinyinPro.pinyin(char,{toneType:'symbol'});
     }catch(e){ els.pinyin.textContent=''; }
-  }
 
-  const info = charInfoMap[char];
-  if(info){
-    els.vocabInfo.innerHTML = `<b>Word:</b> ${escapeHtml(info.vocabulary)} | <b>Pinyin:</b> ${escapeHtml(info.pinyin)}<br><b>Context:</b> ${escapeHtml(info.context || 'N/A')} | <b>POS:</b> ${escapeHtml(info.pos || 'N/A')}`;
-  } else {
-    els.vocabInfo.textContent = '';
+    const info = charInfoMap[char];
+    if(info){
+      els.vocabInfo.innerHTML = `<b>Word:</b> ${escapeHtml(info.vocabulary)} | <b>Pinyin:</b> ${escapeHtml(info.pinyin)}<br><b>Context:</b> ${escapeHtml(info.context || 'N/A')} | <b>POS:</b> ${escapeHtml(info.pos || 'N/A')}`;
+    } else {
+      els.vocabInfo.textContent = '';
+    }
   }
 
   els.progressIndicator.textContent = `Character ${charIndex + 1} of ${uniqueChars.length}`;

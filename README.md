@@ -65,7 +65,7 @@ The resulting debug APK will be located at `android/app/build/outputs/apk/debug/
 
 ### GitHub Actions CI & Release Workflows
 - **CI Workflow (`.github/workflows/build-apk.yml`)**: Automatically runs the test suite and builds the Android debug APK, uploading it as a downloadable artifact on every push or pull request.
-- **Release Workflow (`.github/workflows/release.yml`)**: Automatically runs tests, builds the Android APK, and publishes it as a GitHub Release asset when a version tag (e.g. `v1.0.1.0`) is pushed or when triggered manually via GitHub Actions workflow dispatch.
+- **Release Workflow (`.github/workflows/release.yml`)**: Automatically runs tests, builds the Android APK, and publishes it as a GitHub Release asset when a version tag (e.g. `v1.0.1.0`) is pushed or when triggered manually via GitHub Actions workflow dispatch (supporting parameterized `tag`, `draft`, and `prerelease` inputs).
 
 ---
 

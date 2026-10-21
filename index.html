@@ -25,6 +25,27 @@ body.dark #vocabInfo { color: #aaa; }
 #stats { font-size:14px; margin-top:5px; font-style:italic; white-space: pre-line; }
 button { margin:5px; padding:8px 12px; font-size:15px; cursor:pointer; }
 #streak { font-size:20px; margin:6px; }
+#feedback {
+  position: fixed; top: 50%; left: 50%;
+  transform: translate(-50%, -50%) scale(0.5);
+  font-size: 120px; pointer-events: none;
+  opacity: 0; transition: opacity 0.2s, transform 0.2s;
+  z-index: 1000;
+}
+#feedback.show {
+  opacity: 1; transform: translate(-50%, -50%) scale(1);
+}
+#completionMessage {
+  position: fixed; top: 40%; left: 50%;
+  transform: translate(-50%, -50%);
+  max-width: calc(100vw - 48px);
+  box-sizing: border-box;
+  font-size: 24px; color: green;
+  background: rgba(255,255,255,0.96);
+  padding: 20px; border: 2px solid green; border-radius: 10px;
+  z-index: 1001; text-align: center;
+}
+#completionMessage[hidden] { display: none; }
 .controls-group { margin: 10px 0; }
 </style>
 </head>
@@ -69,6 +90,8 @@ button { margin:5px; padding:8px 12px; font-size:15px; cursor:pointer; }
 <div id="vocabInfo"></div>
 <div id="writer"></div>
 <div id="stats"></div>
+<div id="feedback" aria-live="polite" aria-label="Correct">✅</div>
+<div id="completionMessage" role="status" aria-live="polite" hidden>🎉 Congratulations! You completed the deck/list!</div>
 
 <div>
   <button id="exportBtn">Export</button>
@@ -89,6 +112,9 @@ let uniqueChars = [];
 let charInfoMap = {};
 let charIndex = 0;
 let writer = null;
+let isTransitioning = false;
+let completionTimeout = null;
+let feedbackTimeout = null;
 let streak = 0;
 let lastPracticeDate = null;
 let todaySet = new Set();
@@ -116,7 +142,9 @@ const els = {
   progressIndicator: document.getElementById('progressIndicator'),
   hidePromptToggle: document.getElementById('hidePromptToggle'),
   hideOutlineToggle: document.getElementById('hideOutlineToggle'),
-  noHintToggle: document.getElementById('noHintToggle')
+  noHintToggle: document.getElementById('noHintToggle'),
+  feedback: document.getElementById('feedback'),
+  completionMessage: document.getElementById('completionMessage')
 };
 
 function updateStreak(){
@@ -335,8 +363,11 @@ function showChar(){
   };
 
   writer = HanziWriter.create('writer', char, options);
+  isTransitioning = false;
+  els.feedback.classList.remove('show');
+  els.completionMessage.hidden = true;
   writer.quiz({
-    onComplete: nextChar,
+    onComplete: handleCorrect,
     showHintAfterMisses: prefs.noHint ? 9999 : 3
   });
   updateStatsText();
@@ -344,7 +375,27 @@ function showChar(){
   updateURL();
 }
 
+function handleCorrect(){
+  // Hanzi Writer can report completion more than once; only advance once.
+  if(isTransitioning) return;
+  isTransitioning = true;
+  els.feedback.classList.add('show');
+  if(feedbackTimeout) clearTimeout(feedbackTimeout);
+  feedbackTimeout = setTimeout(() => {
+    els.feedback.classList.remove('show');
+    isTransitioning = false;
+    feedbackTimeout = null;
+    advanceAfterCorrect();
+  }, 1000);
+}
+
 function nextChar(){
+  // Manual navigation should not race the success animation.
+  if(isTransitioning) return;
+  advanceAfterCorrect();
+}
+
+function advanceAfterCorrect(){
   if(charIndex >= uniqueChars.length - 1){ finishList(); return; }
   charIndex++;
   showChar();
@@ -361,16 +412,19 @@ function replayStroke(){
 }
 
 function finishList(){
-  const msg = document.createElement('div');
-  msg.textContent = '🎉 Congratulations! You completed the deck/list!';
-  msg.style.fontSize='24px'; msg.style.color='green';
-  msg.style.position='fixed'; msg.style.top='40%'; msg.style.left='50%';
-  msg.style.transform='translate(-50%, -50%)';
-  msg.style.background='rgba(255,255,255,0.9)'; msg.style.padding='20px';
-  msg.style.border='2px solid green'; msg.style.borderRadius='10px'; msg.style.zIndex='1000';
-  document.body.appendChild(msg);
-  setTimeout(()=>document.body.removeChild(msg),3000);
-  els.char.textContent=''; els.pinyin.textContent=''; els.vocabInfo.textContent=''; els.writer.innerHTML='';
+  isTransitioning = false;
+  els.feedback.classList.remove('show');
+  els.completionMessage.hidden = false;
+  if(completionTimeout) clearTimeout(completionTimeout);
+  completionTimeout = setTimeout(() => {
+    els.completionMessage.hidden = true;
+    completionTimeout = null;
+  }, 3000);
+  els.char.textContent=''; els.pinyin.textContent=''; els.vocabInfo.textContent='';
+  els.progressIndicator.textContent = `Completed ${uniqueChars.length} characters!`;
+  els.writer.innerHTML='';
+  writer = null;
+  saveProgress();
 }
 
 function updateStatsText(){

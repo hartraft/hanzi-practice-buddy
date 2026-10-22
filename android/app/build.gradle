@@ -1,17 +1,18 @@
 apply plugin: 'com.android.application'
 
-// GitHub Actions provides a monotonically increasing run number, so each CI APK
-// can be installed over the previous one. Keep local builds installable too.
-def apkVersionCode = System.getenv("GITHUB_RUN_NUMBER")?.toInteger() ?: 2
+// CI workflows set a repository-wide timestamp-based version code shared by
+// artifact and release builds. Local builds retain a simple development version.
+def apkVersionCode = (System.getenv("APK_VERSION_CODE") ?: System.getenv("GITHUB_RUN_NUMBER") ?: "1").toInteger()
+def apkVersionName = System.getenv("GITHUB_RUN_NUMBER") ? "1.0.${System.getenv("GITHUB_RUN_NUMBER")}" : "1.0"
+def stableDebugKeystore = file("hanzi-debug.keystore")
 
 android {
     namespace "com.hartraft.hanzipracticebuddy"
     compileSdkVersion rootProject.ext.compileSdkVersion
     signingConfigs {
-        debug {
-            // Use a repository-pinned development key because CI runners are ephemeral.
-            // This is for personal/testing APKs, not public Play Store distribution.
-            storeFile file("hanzi-debug.keystore")
+        ciDebug {
+            // Shared personal/testing key; do not use for public Play Store releases.
+            storeFile stableDebugKeystore
             storePassword "android"
             keyAlias "androiddebugkey"
             keyPassword "android"
@@ -22,7 +23,7 @@ android {
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode apkVersionCode
-        versionName "1.0.${apkVersionCode}"
+        versionName apkVersionName
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
             ignoreAssetsPattern '!.svn:!.git:!*.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
@@ -30,7 +31,11 @@ android {
     }
     buildTypes {
         debug {
-            signingConfig signingConfigs.debug
+            // CI restores the stable key before building. Without it, keep Android's
+            // normal user-local debug signing so fresh checkouts work out of the box.
+            if (stableDebugKeystore.exists()) {
+                signingConfig signingConfigs.ciDebug
+            }
         }
         release {
             minifyEnabled false

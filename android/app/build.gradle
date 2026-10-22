@@ -1,8 +1,8 @@
 apply plugin: 'com.android.application'
 
-// CI workflows set a repository-wide timestamp-based version code shared by
-// artifact and release builds. Local builds retain a simple development version.
-def apkVersionCode = (System.getenv("APK_VERSION_CODE") ?: System.getenv("GITHUB_RUN_NUMBER") ?: "1").toInteger()
+// CI workflows set a shared timestamp-based version code for artifact and release
+// builds. Local builds use the same clock-based fallback so they can be upgraded too.
+def apkVersionCode = (System.getenv("APK_VERSION_CODE") ?: System.getenv("GITHUB_RUN_NUMBER") ?: (System.currentTimeMillis() / 60000L).toLong().toString()).toInteger()
 def apkVersionName = System.getenv("GITHUB_RUN_NUMBER") ? "1.0.${System.getenv("GITHUB_RUN_NUMBER")}" : "1.0"
 def stableDebugKeystore = file("hanzi-debug.keystore")
 

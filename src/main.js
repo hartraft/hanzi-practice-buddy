@@ -743,6 +743,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         try {
           customLists = await mergeLocalLists(customLists);
           localStorage.setItem(CUSTOM_LISTS_KEY, JSON.stringify(customLists));
+          await persistLocalCustomLists(customLists);
           renderDeckSelect();
           if (activeCustomListId && customLists.some(list => list.name === activeCustomListId)) {
             const list = customLists.find(item => item.name === activeCustomListId);
@@ -755,11 +756,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
     customLists = await mergeLocalLists(syncInit.localLists || customLists);
     localStorage.setItem(CUSTOM_LISTS_KEY, JSON.stringify(customLists));
+    await persistLocalCustomLists(customLists);
     renderDeckSelect();
     const user = await currentSyncUser();
     if (user) {
       customLists = await mergeLocalLists(customLists);
       localStorage.setItem(CUSTOM_LISTS_KEY, JSON.stringify(customLists));
+      await persistLocalCustomLists(customLists);
       renderDeckSelect();
       await persistCustomLists(customLists);
       setSyncControlsSignedIn(true);

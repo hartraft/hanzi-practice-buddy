@@ -147,7 +147,7 @@ async function handleSession(session) {
   if (!session) {
     currentUser = null;
     connectedUserId = null;
-    if (database) await database.disconnect();
+    if (database && connectedUserId) await database.disconnect();
     setStatus('signed-out', 'Signed out. Local practice remains available.');
     return;
   }

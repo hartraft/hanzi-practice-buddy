@@ -244,26 +244,36 @@ export async function currentSyncUser() {
 export async function persistCustomLists(lists) {
   if (!database || !currentUser) return;
   const now = new Date().toISOString();
-  const existingListsResult = await database.getAll(
+  const existingLists = await database.getAll(
     'SELECT id, name, deleted_at FROM vocabulary_lists WHERE user_id = ?',
     [currentUser.id]
   );
-  const existingLists = existingListsResult || [];
+  const listsById = new Map((existingLists || []).map(row => [row.id, row]));
   const activeIds = new Set();
 
   for (const list of lists) {
     if (!list.id) list.id = crypto.randomUUID();
     activeIds.add(list.id);
-    await database.execute(
-      'INSERT INTO vocabulary_lists (id, user_id, name, created_at, updated_at, deleted_at) VALUES (?, ?, ?, ?, ?, NULL) ON CONFLICT(id) DO UPDATE SET name = excluded.name, updated_at = excluded.updated_at, deleted_at = vocabulary_lists.deleted_at',
-      [list.id, currentUser.id, list.name, now, now]
-    );
+    const existingList = listsById.get(list.id);
+    // Never overwrite a server tombstone with a stale local copy.
+    if (existingList?.deleted_at) continue;
+    if (!existingList) {
+      await database.execute(
+        'INSERT INTO vocabulary_lists (id, user_id, name, created_at, updated_at, deleted_at) VALUES (?, ?, ?, ?, ?, NULL)',
+        [list.id, currentUser.id, list.name, now, now]
+      );
+    } else if (existingList.name !== list.name) {
+      await database.execute(
+        'UPDATE vocabulary_lists SET name = ?, updated_at = ? WHERE id = ?',
+        [list.name, now, list.id]
+      );
+    }
 
     const existingItems = await database.getAll(
       'SELECT id, word, deleted_at, position FROM vocabulary_items WHERE list_id = ?',
       [list.id]
     );
-    const byWord = new Map(existingItems.filter(item => !item.deleted_at).map(item => [item.word, item]));
+    const activeItemsByWord = new Map(existingItems.filter(item => !item.deleted_at).map(item => [item.word, item]));
     const tombstonedWords = new Set(existingItems.filter(item => item.deleted_at).map(item => item.word));
     const activeWords = new Set();
     for (let position = 0; position < list.words.length; position++) {
@@ -271,10 +281,19 @@ export async function persistCustomLists(lists) {
       activeWords.add(word);
       // A tombstone wins over a stale offline copy of the same vocabulary item.
       if (tombstonedWords.has(word)) continue;
-      const itemId = await stableItemId(list.id, word);
+      const existingItem = activeItemsByWord.get(word);
+      if (existingItem) {
+        if (existingItem.position !== position) {
+          await database.execute(
+            'UPDATE vocabulary_items SET position = ?, updated_at = ? WHERE id = ?',
+            [position, now, existingItem.id]
+          );
+        }
+        continue;
+      }
       await database.execute(
-        'INSERT INTO vocabulary_items (id, user_id, list_id, word, position, created_at, updated_at, deleted_at) VALUES (?, ?, ?, ?, ?, ?, ?, NULL) ON CONFLICT(id) DO UPDATE SET position = excluded.position, updated_at = excluded.updated_at, deleted_at = NULL',
-        [itemId, currentUser.id, list.id, word, position, now, now]
+        'INSERT INTO vocabulary_items (id, user_id, list_id, word, position, created_at, updated_at, deleted_at) VALUES (?, ?, ?, ?, ?, ?, ?, NULL)',
+        [await stableItemId(list.id, word), currentUser.id, list.id, word, position, now, now]
       );
     }
     for (const item of existingItems) {
@@ -284,7 +303,7 @@ export async function persistCustomLists(lists) {
     }
   }
 
-  for (const row of existingLists) {
+  for (const row of existingLists || []) {
     if (!activeIds.has(row.id) && !row.deleted_at) {
       await database.execute('UPDATE vocabulary_lists SET deleted_at = ?, updated_at = ? WHERE id = ?', [now, now, row.id]);
     }
@@ -321,9 +340,10 @@ export async function persistLocalCustomLists(lists) {
     for (const list of lists) {
       if (!list.id) list.id = crypto.randomUUID();
       currentIds.add(list.id);
+      const listUpdatedAt = new Date(list.updatedAt || Date.now()).toISOString();
       await database.execute(
         'INSERT INTO local_vocabulary_lists (id, name, created_at, updated_at) VALUES (?, ?, ?, ?) ON CONFLICT(id) DO UPDATE SET name = excluded.name, updated_at = excluded.updated_at',
-        [list.id, list.name, now, now]
+        [list.id, list.name, now, listUpdatedAt]
       );
       const existing = await database.getAll('SELECT id, word FROM local_vocabulary_items WHERE list_id = ?', [list.id]);
       const words = new Set(list.words || []);
@@ -331,7 +351,7 @@ export async function persistLocalCustomLists(lists) {
         const word = list.words[position];
         await database.execute(
           'INSERT INTO local_vocabulary_items (id, list_id, word, position, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?) ON CONFLICT(id) DO UPDATE SET position = excluded.position, updated_at = excluded.updated_at',
-          [await stableItemId(list.id, word), list.id, word, position, now, now]
+          [await stableItemId(list.id, word), list.id, word, position, now, listUpdatedAt]
         );
       }
       for (const item of existing || []) {

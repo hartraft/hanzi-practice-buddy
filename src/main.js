@@ -656,6 +656,7 @@ function setSyncStatus(status, detail = '') {
   if (!element) return;
   const labels = {
     'local-only': 'Local only',
+    'offline': 'Offline',
     'signed-out': 'Signed out',
     'syncing': 'Syncing…',
     'synced': 'Synced',

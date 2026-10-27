@@ -1,5 +1,6 @@
-import { PowerSyncDatabase } from '@powersync/capacitor';
-import { column, Schema, Table } from '@powersync/web';
+import { Capacitor } from '@capacitor/core';
+import { PowerSyncDatabase as CapacitorPowerSyncDatabase } from '@powersync/capacitor';
+import { column, PowerSyncDatabase as WebPowerSyncDatabase, Schema, Table } from '@powersync/web';
 import { createClient } from '@supabase/supabase-js';
 import { stableVocabularyItemId as stableItemId } from './vocabulary-model.js';
 
@@ -39,6 +40,8 @@ const schema = new Schema({
     updated_at: column.text
   }, { localOnly: true })
 });
+
+const PowerSyncDatabase = Capacitor.isNativePlatform() ? CapacitorPowerSyncDatabase : WebPowerSyncDatabase;
 
 let supabase = null;
 let database = null;

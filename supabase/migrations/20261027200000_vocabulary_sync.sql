@@ -45,6 +45,10 @@ language plpgsql
 set search_path = ''
 as $$
 begin
+  -- Once deleted, a row cannot be resurrected by a stale offline upsert.
+  if tg_op = 'UPDATE' and old.deleted_at is not null then
+    new.deleted_at := old.deleted_at;
+  end if;
   new.updated_at := pg_catalog.now();
   return new;
 end;

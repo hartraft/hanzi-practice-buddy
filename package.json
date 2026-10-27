@@ -16,6 +16,7 @@
     "@powersync/capacitor": "0.9.4",
     "@powersync/web": "2.5.0",
     "@supabase/supabase-js": "2.117.1",
-    "vite": "7.1.12"
+    "vite": "7.1.12",
+    "@journeyapps/wa-sqlite": "2.0.8"
   }
 }

@@ -270,12 +270,15 @@ export async function persistCustomLists(lists) {
       [list.id]
     );
     const byWord = new Map(existingItems.filter(item => !item.deleted_at).map(item => [item.word, item]));
+    const tombstonedWords = new Set(existingItems.filter(item => item.deleted_at).map(item => item.word));
     const activeWords = new Set();
     for (let position = 0; position < list.words.length; position++) {
       const word = list.words[position];
       activeWords.add(word);
+      // A tombstone wins over a stale offline copy of the same vocabulary item.
+      if (tombstonedWords.has(word)) continue;
       const old = byWord.get(word);
-      const itemId = await stableItemId(list.id, word);
+      const itemId = old?.id || await stableItemId(list.id, word);
       await database.execute(
         'INSERT INTO vocabulary_items (id, user_id, list_id, word, position, created_at, updated_at, deleted_at) VALUES (?, ?, ?, ?, ?, ?, ?, NULL) ON CONFLICT(id) DO UPDATE SET position = excluded.position, updated_at = excluded.updated_at, deleted_at = NULL',
         [itemId, currentUser.id, list.id, word, position, now, now]

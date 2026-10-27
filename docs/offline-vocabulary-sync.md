@@ -14,7 +14,7 @@ PowerSync's Capacitor SDK is currently beta and requires Capacitor 8+, `@capacit
 ## Database setup
 
 1. Create a Supabase project.
-2. Apply `supabase/migrations/202610270001_vocabulary_sync.sql` using the Supabase CLI migration workflow or SQL Editor.
+2. Apply `supabase/migrations/20261027200000_vocabulary_sync.sql` using the Supabase CLI migration workflow or SQL Editor.
 3. Review RLS policies in the Supabase dashboard and test with two separate authenticated users. The migration grants the `authenticated` role table access but row policies restrict access to each user's rows.
 4. Create/configure a PowerSync service connected to the Supabase Postgres database and configure sync rules so clients only receive records where `user_id` matches the authenticated JWT subject. Do not expose another user's records through a client sync bucket.
 5. Configure the client with the Supabase project URL, Supabase publishable key, and PowerSync endpoint. These values may be public client configuration; never include a Supabase service-role key, database password, or privileged sync credential in app assets.

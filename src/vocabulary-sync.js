@@ -24,7 +24,19 @@ const schema = new Schema({
     created_at: column.text,
     updated_at: column.text,
     deleted_at: column.text
-  })
+  }),
+  local_vocabulary_lists: new Table({
+    name: column.text,
+    created_at: column.text,
+    updated_at: column.text
+  }, { localOnly: true }),
+  local_vocabulary_items: new Table({
+    list_id: column.text,
+    word: column.text,
+    position: column.integer,
+    created_at: column.text,
+    updated_at: column.text
+  }, { localOnly: true })
 });
 
 let supabase = null;
@@ -34,6 +46,8 @@ let onListsChanged = () => {};
 let onStatusChanged = () => {};
 let connectionPromise = null;
 let watcherStarted = false;
+let connectedUserId = null;
+let localWriteQueue = Promise.resolve();
 
 function setStatus(status, detail = '') {
   onStatusChanged({ status, detail, configured: Boolean(supabase && database && config.powerSyncUrl), signedIn: Boolean(currentUser) });
@@ -90,23 +104,31 @@ export function syncConfiguration() {
 export async function initVocabularySync(options = {}) {
   onListsChanged = options.onListsChanged || (() => {});
   onStatusChanged = options.onStatusChanged || (() => {});
-  if (!config.supabaseUrl || !config.supabaseKey || !config.powerSyncUrl) {
-    setStatus('local-only', 'Add Supabase and PowerSync client configuration to enable cloud sync.');
-    return { configured: false };
+
+  // Always open the local database, even without cloud configuration. Local-only
+  // PowerSync tables provide durable SQLite storage on Android and SQLite/WASM on web.
+  database = new PowerSyncDatabase({
+    schema,
+    database: { dbFilename: 'hanzi-vocabulary.sqlite' }
+  });
+  const storedLocal = await loadLocalCustomLists();
+  const initialLists = options.initialLists || [];
+  const mergedLocal = mergeListArrays(initialLists, storedLocal);
+  await persistLocalCustomLists(mergedLocal);
+
+  const configured = Boolean(config.supabaseUrl && config.supabaseKey && config.powerSyncUrl);
+  if (!configured) {
+    setStatus('local-only', 'Saved locally in SQLite. Add cloud configuration to enable cross-device sync.');
+    return { configured: false, localLists: await loadLocalCustomLists() };
   }
 
   supabase = createClient(config.supabaseUrl, config.supabaseKey, {
     auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
   });
-  database = new PowerSyncDatabase({
-    schema,
-    database: { dbFilename: 'hanzi-vocabulary.sqlite' }
-  });
-
   const { data, error } = await supabase.auth.getSession();
   if (error) {
     setStatus('error', error.message);
-    return { configured: true, error };
+    return { configured: true, localLists: await loadLocalCustomLists(), error };
   }
 
   supabase.auth.onAuthStateChange((_event, session) => {
@@ -117,23 +139,26 @@ export async function initVocabularySync(options = {}) {
   });
 
   if (data.session) await handleSession(data.session);
-  else setStatus('signed-out', 'Sign in to sync custom vocabulary. Local practice remains available.');
-  return { configured: true };
+  else setStatus('signed-out', 'Saved locally in SQLite. Sign in to sync across devices.');
+  return { configured: true, localLists: await loadLocalCustomLists() };
 }
 
 async function handleSession(session) {
   if (!session) {
     currentUser = null;
+    connectedUserId = null;
     if (database) await database.disconnect();
     setStatus('signed-out', 'Signed out. Local practice remains available.');
     return;
   }
   currentUser = session.user;
   if (!database || !config.powerSyncUrl) return;
+  if (connectedUserId === session.user.id) return;
   if (connectionPromise) return connectionPromise;
   connectionPromise = (async () => {
     setStatus('syncing', 'Connecting to cloud sync…');
     await database.connect(new SupabasePowerSyncConnector());
+    connectedUserId = session.user.id;
     if (!watcherStarted && typeof database.watch === 'function') {
       watcherStarted = true;
       watchRemoteLists().catch(error => setStatus('error', error.message || String(error)));
@@ -255,10 +280,87 @@ export async function persistCustomLists(lists) {
   setStatus('syncing', 'Local vocabulary saved; cloud changes will sync when connected.');
 }
 
+function mergeListArrays(first, second) {
+  const merged = [];
+  const byId = new Map();
+  const byName = new Map();
+  for (const list of [...first, ...second]) {
+    const existing = (list.id && byId.get(list.id)) || byName.get(list.name);
+    if (existing) {
+      if (!existing.id && list.id) existing.id = list.id;
+      existing.words = [...new Set([...(existing.words || []), ...(list.words || [])])];
+      existing.updatedAt = Math.max(existing.updatedAt || 0, list.updatedAt || 0);
+    } else {
+      const copy = { ...list, words: [...new Set(list.words || [])] };
+      merged.push(copy);
+      if (copy.id) byId.set(copy.id, copy);
+      byName.set(copy.name, copy);
+    }
+  }
+  return merged;
+}
+
+export async function persistLocalCustomLists(lists) {
+  if (!database) return;
+  // Serialize writes so quick successive Save/Delete actions cannot interleave.
+  localWriteQueue = localWriteQueue.then(async () => {
+    const now = new Date().toISOString();
+    const currentIds = new Set();
+    for (const list of lists) {
+      if (!list.id) list.id = crypto.randomUUID();
+      currentIds.add(list.id);
+      await database.execute(
+        'INSERT INTO local_vocabulary_lists (id, name, created_at, updated_at) VALUES (?, ?, ?, ?) ON CONFLICT(id) DO UPDATE SET name = excluded.name, updated_at = excluded.updated_at',
+        [list.id, list.name, now, now]
+      );
+      const existing = await database.getAll('SELECT id, word FROM local_vocabulary_items WHERE list_id = ?', [list.id]);
+      const byWord = new Map((existing || []).map(item => [item.word, item]));
+      const words = new Set(list.words || []);
+      for (let position = 0; position < (list.words || []).length; position++) {
+        const word = list.words[position];
+        const old = byWord.get(word);
+        await database.execute(
+          'INSERT INTO local_vocabulary_items (id, list_id, word, position, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?) ON CONFLICT(id) DO UPDATE SET position = excluded.position, updated_at = excluded.updated_at',
+          [old?.id || crypto.randomUUID(), list.id, word, position, now, now]
+        );
+      }
+      for (const item of existing || []) {
+        if (!words.has(item.word)) await database.execute('DELETE FROM local_vocabulary_items WHERE id = ?', [item.id]);
+      }
+    }
+    const existingLists = await database.getAll('SELECT id FROM local_vocabulary_lists');
+    for (const row of existingLists || []) {
+      if (!currentIds.has(row.id)) {
+        await database.execute('DELETE FROM local_vocabulary_items WHERE list_id = ?', [row.id]);
+        await database.execute('DELETE FROM local_vocabulary_lists WHERE id = ?', [row.id]);
+      }
+    }
+  });
+  return localWriteQueue;
+}
+
+export async function loadLocalCustomLists() {
+  if (!database) return [];
+  const rows = await database.getAll('SELECT id, name, updated_at FROM local_vocabulary_lists ORDER BY name COLLATE NOCASE');
+  const lists = [];
+  for (const row of rows || []) {
+    const items = await database.getAll('SELECT word FROM local_vocabulary_items WHERE list_id = ? ORDER BY position ASC', [row.id]);
+    lists.push({
+      id: row.id,
+      name: row.name,
+      words: (items || []).map(item => item.word),
+      updatedAt: Date.parse(row.updated_at) || Date.now()
+    });
+  }
+  return lists;
+}
+
 export async function mergeLocalLists(localLists) {
-  if (!database || !currentUser) return localLists;
+  if (!database) return localLists;
+  const localDbLists = await loadLocalCustomLists();
+  const result = mergeListArrays(localLists, localDbLists);
+  if (!currentUser) return result;
   // Preserve local-only lists while merging remote data by stable ID or name.
-  const result = [...localLists];
   const byId = new Map(result.filter(list => list.id).map(list => [list.id, list]));
   const byName = new Map(result.map(list => [list.name, list]));
   const remoteResult = await database.getAll(

@@ -2,6 +2,9 @@ import { defineConfig } from 'vite';
 
 export default defineConfig({
   publicDir: 'public',
+  worker: {
+    format: 'es'
+  },
   build: {
     outDir: 'dist',
     emptyOutDir: true,

@@ -159,6 +159,11 @@ async function handleSession(session) {
     setStatus('syncing', 'Connecting to cloud sync…');
     await database.connect(new SupabasePowerSyncConnector());
     connectedUserId = session.user.id;
+    database.waitForFirstSync().then(() => {
+      setStatus('synced', 'Cloud vocabulary is up to date.');
+    }).catch(() => {
+      setStatus('syncing', 'Local vocabulary is available; waiting for cloud connection.');
+    });
     if (!watcherStarted && typeof database.watch === 'function') {
       watcherStarted = true;
       watchRemoteLists().catch(error => setStatus('error', error.message || String(error)));
@@ -196,7 +201,7 @@ async function watchRemoteLists() {
       words: list.words.sort((a, b) => a.position - b.position).map(item => item.word)
     }));
     onListsChanged(lists);
-    setStatus('synced', `Synced ${lists.length} custom list(s).`);
+    setStatus('syncing', `Loaded ${lists.length} custom list(s) from local storage; sync continues in the background.`);
   }
 }
 

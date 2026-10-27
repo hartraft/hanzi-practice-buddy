@@ -1,4 +1,4 @@
-import { initVocabularySync, signIn, signUp, signOut, currentSyncUser, persistCustomLists, mergeLocalLists, syncConfiguration } from './vocabulary-sync.js';
+import { initVocabularySync, signIn, signUp, signOut, currentSyncUser, persistCustomLists, persistLocalCustomLists, mergeLocalLists, syncConfiguration } from './vocabulary-sync.js';
 import { normalizeCustomLists } from './vocabulary-model.js';
 
 const converter = OpenCC.Converter({ from:'cn', to:'tw' });
@@ -50,6 +50,9 @@ function saveCustomLists(){
       if(!list.updatedAt) list.updatedAt = Date.now();
     }
     localStorage.setItem(CUSTOM_LISTS_KEY, JSON.stringify(customLists));
+    persistLocalCustomLists(customLists).catch(error => {
+      setSyncStatus('error', 'Local SQLite save failed: ' + (error.message || String(error)));
+    });
     persistCustomLists(customLists).catch(error => {
       setSyncStatus('error', 'Local save succeeded; cloud sync will retry: ' + (error.message || String(error)));
     });
@@ -724,11 +727,14 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   const configuration = syncConfiguration();
+  document.getElementById('syncSignInBtn').disabled = !configuration.configured;
+  document.getElementById('syncSignUpBtn').disabled = !configuration.configured;
   if (!configuration.configured) {
     setSyncStatus('local-only', 'Cloud sync is not configured. Local practice and lists still work.');
   }
   try {
-    await initVocabularySync({
+    const syncInit = await initVocabularySync({
+      initialLists: customLists,
       onStatusChanged: ({ status, detail, signedIn }) => {
         setSyncStatus(status, detail);
         setSyncControlsSignedIn(Boolean(signedIn));
@@ -747,6 +753,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
       }
     });
+    customLists = await mergeLocalLists(syncInit.localLists || customLists);
+    localStorage.setItem(CUSTOM_LISTS_KEY, JSON.stringify(customLists));
+    renderDeckSelect();
     const user = await currentSyncUser();
     if (user) {
       customLists = await mergeLocalLists(customLists);

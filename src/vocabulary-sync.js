@@ -411,9 +411,11 @@ export async function mergeLocalLists(localLists) {
     const words = [...new Set((remoteItems || []).filter(item => !item.deleted_at).map(item => item.word).filter(Boolean))];
     const match = byIdLive.get(remote.id) || byNameLive.get(remote.name);
     if (match) {
+      const remoteUpdatedAt = Date.parse(remote.updated_at) || 0;
+      if (remoteUpdatedAt >= (match.updatedAt || 0)) match.name = remote.name;
       match.id = remote.id;
       match.words = [...new Set([...match.words.filter(word => !deletedWords.has(word)), ...words])];
-      match.updatedAt = Math.max(match.updatedAt || 0, Date.parse(remote.updated_at) || 0);
+      match.updatedAt = Math.max(match.updatedAt || 0, remoteUpdatedAt);
     } else {
       const list = { id: remote.id, name: remote.name, words, updatedAt: Date.parse(remote.updated_at) || Date.now() };
       surviving.push(list);

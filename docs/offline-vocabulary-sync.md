@@ -39,11 +39,10 @@ End-to-end syncing cannot be enabled until the Supabase and PowerSync services a
 
 ## Validation checklist
 
-- [ ] Existing app tests pass.
-- [ ] Capacitor SDK and SQLite plugin compatibility verified against the actual Android project.
-- [ ] App builds for Android and web with the new module-aware bundler.
-- [ ] Existing local lists migrate idempotently.
-- [ ] Create/edit/delete custom lists in airplane mode, force-stop/restart, and confirm persistence.
+- [ ] Existing app tests and Android/web builds pass on the current commit.
+- [x] PowerSync SDK peer dependencies confirmed; Capacitor 8 and a module-aware build are now configured in the branch.
+- [x] Existing local lists are normalized with stable IDs and migrated to local-only SQLite tables idempotently.
+- [ ] Physically test create/edit/delete in airplane mode, force-stop/restart, and confirm persistence on Android and browser.
 - [ ] Two authenticated clients preserve distinct concurrent word additions after reconnecting.
 - [ ] Delete a word/list on one client while the other is offline; reconnect and verify no resurrection.
 - [ ] Confirm a second user cannot read or modify the first user's records.

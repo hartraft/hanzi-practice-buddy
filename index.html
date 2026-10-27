@@ -49,6 +49,9 @@ button { margin:5px; padding:8px 12px; font-size:15px; cursor:pointer; }
 .controls-group { margin: 10px 0; }
 #currentListName { font-size: 13px; margin-top: 4px; color: #555; }
 body.dark #currentListName { color: #aaa; }
+#syncPanel { max-width: 520px; margin: 12px auto; padding: 8px; border: 1px solid #ccc; border-radius: 8px; }
+#syncStatus { font-size: 13px; margin: 6px; }
+#syncPanel input { max-width: 210px; margin: 4px; padding: 7px; }
 </style>
 </head>
 <body>
@@ -56,6 +59,16 @@ body.dark #currentListName { color: #aaa; }
 <h2>hanzi-practice-buddy</h2>
 <div id="streak">🔥 0</div>
 <button id="darkToggle">🌙 / ☀️</button>
+
+<div id="syncPanel" class="controls-group" aria-label="Cloud sync">
+  <strong>Cloud vocabulary sync</strong>
+  <div id="syncStatus" role="status" aria-live="polite">Local-only mode; custom lists remain on this device.</div>
+  <input id="syncEmail" type="email" autocomplete="email" placeholder="Email for sync account" aria-label="Email for sync account">
+  <input id="syncPassword" type="password" autocomplete="current-password" placeholder="Password" aria-label="Password for sync account">
+  <button id="syncSignInBtn" type="button">Sign in</button>
+  <button id="syncSignUpBtn" type="button">Create account</button>
+  <button id="syncSignOutBtn" type="button" hidden>Sign out</button>
+</div>
 
 <div class="controls-group">
   <label for="deckSelect"><b>Vocabulary Deck:</b></label>

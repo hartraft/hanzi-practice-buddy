@@ -145,6 +145,18 @@ export async function initVocabularySync(options = {}) {
     });
   });
 
+  const retrySync = () => {
+    if (currentUser && !connectedUserId) {
+      handleSession({ user: currentUser }).catch(error => {
+        setStatus('syncing', 'Local vocabulary is available; cloud reconnect will retry.');
+      });
+    }
+  };
+  window.addEventListener('online', retrySync);
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') retrySync();
+  });
+
   if (data.session) await handleSession(data.session);
   else setStatus('signed-out', 'Saved locally in SQLite. Sign in to sync across devices.');
   return { configured: true, localLists: await loadLocalCustomLists() };

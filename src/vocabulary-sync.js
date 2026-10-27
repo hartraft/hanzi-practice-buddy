@@ -146,13 +146,17 @@ export async function initVocabularySync(options = {}) {
   });
 
   const retrySync = () => {
+    if (currentUser) setStatus('syncing', 'Connection restored; synchronising pending changes.');
     if (currentUser && !connectedUserId) {
-      handleSession({ user: currentUser }).catch(error => {
-        setStatus('syncing', 'Local vocabulary is available; cloud reconnect will retry.');
+      handleSession({ user: currentUser }).catch(() => {
+        setStatus('offline', 'Local vocabulary is safe; cloud reconnect will retry.');
       });
     }
   };
   window.addEventListener('online', retrySync);
+  window.addEventListener('offline', () => {
+    setStatus('offline', 'Edits are saved locally and will sync when reconnected.');
+  });
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible') retrySync();
   });

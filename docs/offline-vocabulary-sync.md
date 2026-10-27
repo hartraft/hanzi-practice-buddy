@@ -1,6 +1,6 @@
 # Offline-first vocabulary sync
 
-This change introduces the first backend-schema checkpoint for the planned Supabase + PowerSync implementation. **It does not enable app sync by itself yet.** The app still uses its existing localStorage storage path until the local SQLite and sync client are integrated and tested.
+The app now uses PowerSync's local-only SQLite tables for saved custom vocabulary on Android and the browser. Existing localStorage lists are normalized with stable IDs and migrated into SQLite; localStorage remains as a compatibility/recovery copy. The cloud sync client and account controls are implemented, but cross-device sync is not active until a Supabase project and PowerSync service are configured and end-to-end tested.
 
 ## Architecture
 
@@ -9,7 +9,7 @@ This change introduces the first backend-schema checkpoint for the planned Supab
 - PowerSync: local SQLite on Android and SQLite/WASM-backed persistence in the browser, plus queued bidirectional sync.
 - App: bundled TOCFL decks and practice must remain usable offline, even when signed out.
 
-PowerSync's Capacitor SDK is currently beta. It requires `@powersync/capacitor`, `@powersync/web`, and `@capacitor-community/sqlite`, and a module-aware build setup. This repository currently uses plain HTML script tags and Capacitor 5, so SDK/package compatibility and the required Capacitor upgrade must be validated before wiring it into the production app. See the [PowerSync Capacitor SDK guide](https://powersync-ja.github.io/powersync-js/capacitor-sdk).
+PowerSync's Capacitor SDK is currently beta and requires Capacitor 8+, `@capacitor-community/sqlite`, `@powersync/web`, the WA-SQLite web driver, and a module-aware build setup. This branch upgrades the app's Capacitor/Android toolchain and uses Vite to bundle the existing HTML/JavaScript app. See the [PowerSync Capacitor SDK guide](https://powersync-ja.github.io/powersync-js/capacitor-sdk).
 
 ## Database setup
 

@@ -206,7 +206,11 @@ async function watchRemoteLists() {
       words: list.words.sort((a, b) => a.position - b.position).map(item => item.word)
     }));
     onListsChanged(lists);
-    setStatus('syncing', `Loaded ${lists.length} custom list(s) from local storage; sync continues in the background.`);
+    if (database.currentStatus?.hasSynced) {
+      setStatus('synced', `Synced ${lists.length} custom list(s).`);
+    } else {
+      setStatus('syncing', `Loaded ${lists.length} custom list(s) locally; initial sync is pending.`);
+    }
   }
 }
 

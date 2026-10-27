@@ -220,7 +220,7 @@ export async function persistCustomLists(lists) {
     if (!list.id) list.id = crypto.randomUUID();
     activeIds.add(list.id);
     await database.execute(
-      'INSERT INTO vocabulary_lists (id, user_id, name, created_at, updated_at, deleted_at) VALUES (?, ?, ?, ?, ?, NULL) ON CONFLICT(id) DO UPDATE SET name = excluded.name, updated_at = excluded.updated_at, deleted_at = NULL',
+      'INSERT INTO vocabulary_lists (id, user_id, name, created_at, updated_at, deleted_at) VALUES (?, ?, ?, ?, ?, NULL) ON CONFLICT(id) DO UPDATE SET name = excluded.name, updated_at = excluded.updated_at, deleted_at = vocabulary_lists.deleted_at',
       [list.id, currentUser.id, list.name, now, now]
     );
 
@@ -262,26 +262,32 @@ export async function mergeLocalLists(localLists) {
   const byId = new Map(result.filter(list => list.id).map(list => [list.id, list]));
   const byName = new Map(result.map(list => [list.name, list]));
   const remoteResult = await database.getAll(
-    'SELECT id, name, updated_at FROM vocabulary_lists WHERE user_id = ? AND deleted_at IS NULL',
+    'SELECT id, name, updated_at, deleted_at FROM vocabulary_lists WHERE user_id = ?',
     [currentUser.id]
   );
-  for (const remote of remoteResult || []) {
+  const deletedListIds = new Set((remoteResult || []).filter(row => row.deleted_at).map(row => row.id));
+  // A remote list tombstone wins over a stale local snapshot.
+  const surviving = result.filter(list => !list.id || !deletedListIds.has(list.id));
+  const byIdLive = new Map(surviving.filter(list => list.id).map(list => [list.id, list]));
+  const byNameLive = new Map(surviving.map(list => [list.name, list]));
+  for (const remote of (remoteResult || []).filter(row => !row.deleted_at)) {
     const remoteItems = await database.getAll(
-      'SELECT word FROM vocabulary_items WHERE list_id = ? AND deleted_at IS NULL ORDER BY position ASC',
+      'SELECT word, deleted_at FROM vocabulary_items WHERE list_id = ? ORDER BY position ASC',
       [remote.id]
     );
-    const words = [...new Set((remoteItems || []).map(item => item.word).filter(Boolean))];
-    const match = byId.get(remote.id) || byName.get(remote.name);
+    const deletedWords = new Set((remoteItems || []).filter(item => item.deleted_at).map(item => item.word));
+    const words = [...new Set((remoteItems || []).filter(item => !item.deleted_at).map(item => item.word).filter(Boolean))];
+    const match = byIdLive.get(remote.id) || byNameLive.get(remote.name);
     if (match) {
       match.id = remote.id;
-      match.words = [...new Set([...match.words, ...words])];
+      match.words = [...new Set([...match.words.filter(word => !deletedWords.has(word)), ...words])];
       match.updatedAt = Math.max(match.updatedAt || 0, Date.parse(remote.updated_at) || 0);
     } else {
       const list = { id: remote.id, name: remote.name, words, updatedAt: Date.parse(remote.updated_at) || Date.now() };
-      result.push(list);
-      byId.set(list.id, list);
-      byName.set(list.name, list);
+      surviving.push(list);
+      byIdLive.set(list.id, list);
+      byNameLive.set(list.name, list);
     }
   }
-  return result;
+  return surviving;
 }

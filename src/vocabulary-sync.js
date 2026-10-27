@@ -268,8 +268,7 @@ export async function persistCustomLists(lists) {
       activeWords.add(word);
       // A tombstone wins over a stale offline copy of the same vocabulary item.
       if (tombstonedWords.has(word)) continue;
-      const old = byWord.get(word);
-      const itemId = old?.id || await stableItemId(list.id, word);
+      const itemId = await stableItemId(list.id, word);
       await database.execute(
         'INSERT INTO vocabulary_items (id, user_id, list_id, word, position, created_at, updated_at, deleted_at) VALUES (?, ?, ?, ?, ?, ?, ?, NULL) ON CONFLICT(id) DO UPDATE SET position = excluded.position, updated_at = excluded.updated_at, deleted_at = NULL',
         [itemId, currentUser.id, list.id, word, position, now, now]
@@ -324,11 +323,9 @@ export async function persistLocalCustomLists(lists) {
         [list.id, list.name, now, now]
       );
       const existing = await database.getAll('SELECT id, word FROM local_vocabulary_items WHERE list_id = ?', [list.id]);
-      const byWord = new Map((existing || []).map(item => [item.word, item]));
       const words = new Set(list.words || []);
       for (let position = 0; position < (list.words || []).length; position++) {
         const word = list.words[position];
-        const old = byWord.get(word);
         await database.execute(
           'INSERT INTO local_vocabulary_items (id, list_id, word, position, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?) ON CONFLICT(id) DO UPDATE SET position = excluded.position, updated_at = excluded.updated_at',
           [await stableItemId(list.id, word), list.id, word, position, now, now]

@@ -1,0 +1,19 @@
+schema: spec-driven
+
+# Project context for OpenSpec change proposals.
+context: |
+  Hanzi Practice Buddy is a plain HTML/JavaScript PWA packaged for Android with Capacitor.
+  Bundled TOCFL practice and local vocabulary editing must remain usable offline.
+  Cloud vocabulary sync target: Supabase Postgres + PowerSync local-first SQLite.
+  Never store service-role keys or database credentials in client assets.
+
+rules:
+  proposal:
+    - Keep the first release scoped to custom vocabulary lists and items.
+    - Explicitly describe offline behaviour, migration safety, security and conflict semantics.
+  specs:
+    - Preserve offline use of bundled decks and existing import/export.
+    - Require stable IDs and idempotent migration from existing localStorage.
+  tasks:
+    - Include validation steps for Android restart/airplane mode and two-client reconnect.
+    - Report any cloud setup or tests that cannot be completed locally.

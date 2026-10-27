@@ -52,12 +52,12 @@ $$;
 
 drop trigger if exists vocabulary_lists_set_updated_at on public.vocabulary_lists;
 create trigger vocabulary_lists_set_updated_at
-  before update on public.vocabulary_lists
+  before insert or update on public.vocabulary_lists
   for each row execute function public.set_vocabulary_updated_at();
 
 drop trigger if exists vocabulary_items_set_updated_at on public.vocabulary_items;
 create trigger vocabulary_items_set_updated_at
-  before update on public.vocabulary_items
+  before insert or update on public.vocabulary_items
   for each row execute function public.set_vocabulary_updated_at();
 
 alter table public.vocabulary_lists enable row level security;

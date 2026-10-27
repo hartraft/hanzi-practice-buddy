@@ -6,9 +6,6 @@ on:
   pull_request:
     branches: [ "main" ]
 
-permissions:
-  contents: write
-
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -45,20 +42,6 @@ jobs:
           node-version: '22'
       - name: Install Node dependencies
         run: npm install
-      - name: Commit regenerated lockfile for this feature branch
-        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.head.ref == 'feat/offline-vocabulary-sync'
-        env:
-          HEAD_REF: ${{ github.event.pull_request.head.ref }}
-        run: |
-          cp package-lock.json "$RUNNER_TEMP/package-lock.json"
-          git fetch origin "$HEAD_REF"
-          git checkout -B "$HEAD_REF" "origin/$HEAD_REF"
-          cp "$RUNNER_TEMP/package-lock.json" package-lock.json
-          git add package-lock.json
-          if ! git diff --cached --quiet; then
-            git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" commit -m "build: regenerate npm lockfile for offline sync"
-            git push origin "HEAD:$HEAD_REF"
-          fi
       - name: Audit runtime dependencies
         run: npm audit --omit=dev --audit-level=high
       - name: Build web assets and sync

@@ -30,14 +30,16 @@ const schema = new Schema({
   local_vocabulary_lists: new Table({
     name: column.text,
     created_at: column.text,
-    updated_at: column.text
+    updated_at: column.text,
+    deleted_at: column.text
   }, { localOnly: true }),
   local_vocabulary_items: new Table({
     list_id: column.text,
     word: column.text,
     position: column.integer,
     created_at: column.text,
-    updated_at: column.text
+    updated_at: column.text,
+    deleted_at: column.text
   }, { localOnly: true })
 });
 
@@ -346,27 +348,39 @@ export async function persistLocalCustomLists(lists) {
       currentIds.add(list.id);
       const listUpdatedAt = new Date(list.updatedAt || Date.now()).toISOString();
       await database.execute(
-        'INSERT INTO local_vocabulary_lists (id, name, created_at, updated_at) VALUES (?, ?, ?, ?) ON CONFLICT(id) DO UPDATE SET name = excluded.name, updated_at = excluded.updated_at',
+        'INSERT INTO local_vocabulary_lists (id, name, created_at, updated_at, deleted_at) VALUES (?, ?, ?, ?, NULL) ON CONFLICT(id) DO UPDATE SET name = excluded.name, updated_at = excluded.updated_at, deleted_at = local_vocabulary_lists.deleted_at',
         [list.id, list.name, now, listUpdatedAt]
       );
-      const existing = await database.getAll('SELECT id, word FROM local_vocabulary_items WHERE list_id = ?', [list.id]);
+      const existing = await database.getAll('SELECT id, word, position, deleted_at FROM local_vocabulary_items WHERE list_id = ?', [list.id]);
+      const activeByWord = new Map((existing || []).filter(item => !item.deleted_at).map(item => [item.word, item]));
+      const tombstonedWords = new Set((existing || []).filter(item => item.deleted_at).map(item => item.word));
       const words = new Set(list.words || []);
       for (let position = 0; position < (list.words || []).length; position++) {
         const word = list.words[position];
+        if (tombstonedWords.has(word)) continue;
+        const old = activeByWord.get(word);
+        if (old) {
+          if (old.position !== position) {
+            await database.execute('UPDATE local_vocabulary_items SET position = ?, updated_at = ? WHERE id = ?', [position, listUpdatedAt, old.id]);
+          }
+          continue;
+        }
         await database.execute(
-          'INSERT INTO local_vocabulary_items (id, list_id, word, position, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?) ON CONFLICT(id) DO UPDATE SET position = excluded.position, updated_at = excluded.updated_at',
+          'INSERT INTO local_vocabulary_items (id, list_id, word, position, created_at, updated_at, deleted_at) VALUES (?, ?, ?, ?, ?, ?, NULL)',
           [await stableItemId(list.id, word), list.id, word, position, now, listUpdatedAt]
         );
       }
       for (const item of existing || []) {
-        if (!words.has(item.word)) await database.execute('DELETE FROM local_vocabulary_items WHERE id = ?', [item.id]);
+        if (!words.has(item.word) && !item.deleted_at) {
+          await database.execute('UPDATE local_vocabulary_items SET deleted_at = ?, updated_at = ? WHERE id = ?', [now, now, item.id]);
+        }
       }
     }
-    const existingLists = await database.getAll('SELECT id FROM local_vocabulary_lists');
+    const existingLists = await database.getAll('SELECT id, deleted_at FROM local_vocabulary_lists');
     for (const row of existingLists || []) {
-      if (!currentIds.has(row.id)) {
-        await database.execute('DELETE FROM local_vocabulary_items WHERE list_id = ?', [row.id]);
-        await database.execute('DELETE FROM local_vocabulary_lists WHERE id = ?', [row.id]);
+      if (!currentIds.has(row.id) && !row.deleted_at) {
+        await database.execute('UPDATE local_vocabulary_lists SET deleted_at = ?, updated_at = ? WHERE id = ?', [now, now, row.id]);
+        await database.execute('UPDATE local_vocabulary_items SET deleted_at = ?, updated_at = ? WHERE list_id = ? AND deleted_at IS NULL', [now, now, row.id]);
       }
     }
   });
@@ -375,10 +389,10 @@ export async function persistLocalCustomLists(lists) {
 
 export async function loadLocalCustomLists() {
   if (!database) return [];
-  const rows = await database.getAll('SELECT id, name, updated_at FROM local_vocabulary_lists ORDER BY name COLLATE NOCASE');
+  const rows = await database.getAll('SELECT id, name, updated_at FROM local_vocabulary_lists WHERE deleted_at IS NULL ORDER BY name COLLATE NOCASE');
   const lists = [];
   for (const row of rows || []) {
-    const items = await database.getAll('SELECT word FROM local_vocabulary_items WHERE list_id = ? ORDER BY position ASC, word ASC', [row.id]);
+    const items = await database.getAll('SELECT word FROM local_vocabulary_items WHERE list_id = ? AND deleted_at IS NULL ORDER BY position ASC, word ASC', [row.id]);
     lists.push({
       id: row.id,
       name: row.name,

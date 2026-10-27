@@ -406,7 +406,20 @@ export async function loadLocalCustomLists() {
 export async function mergeLocalLists(localLists) {
   if (!database) return localLists;
   const localDbLists = await loadLocalCustomLists();
-  const result = mergeListArrays(localLists, localDbLists);
+  const localDeletedListRows = await database.getAll('SELECT id FROM local_vocabulary_lists WHERE deleted_at IS NOT NULL');
+  const localDeletedListIds = new Set((localDeletedListRows || []).map(row => row.id));
+  const localDeletedItemRows = await database.getAll('SELECT list_id, word FROM local_vocabulary_items WHERE deleted_at IS NOT NULL');
+  const localDeletedWordsByList = new Map();
+  for (const row of localDeletedItemRows || []) {
+    if (!localDeletedWordsByList.has(row.list_id)) localDeletedWordsByList.set(row.list_id, new Set());
+    localDeletedWordsByList.get(row.list_id).add(row.word);
+  }
+  const result = mergeListArrays(localLists, localDbLists)
+    .filter(list => !list.id || !localDeletedListIds.has(list.id))
+    .map(list => ({
+      ...list,
+      words: (list.words || []).filter(word => !localDeletedWordsByList.get(list.id)?.has(word))
+    }));
   if (!currentUser) return result;
   // Preserve local-only lists while merging remote data by stable ID or name.
   const byId = new Map(result.filter(list => list.id).map(list => [list.id, list]));
@@ -415,8 +428,11 @@ export async function mergeLocalLists(localLists) {
     'SELECT id, name, updated_at, deleted_at FROM vocabulary_lists WHERE user_id = ?',
     [currentUser.id]
   );
-  const deletedListIds = new Set((remoteResult || []).filter(row => row.deleted_at).map(row => row.id));
-  // A remote list tombstone wins over a stale local snapshot.
+  const deletedListIds = new Set([
+    ...localDeletedListIds,
+    ...(remoteResult || []).filter(row => row.deleted_at).map(row => row.id)
+  ]);
+  // Local or remote tombstones win over stale snapshots.
   const surviving = result.filter(list => !list.id || !deletedListIds.has(list.id));
   const byIdLive = new Map(surviving.filter(list => list.id).map(list => [list.id, list]));
   const byNameLive = new Map(surviving.map(list => [list.name, list]));
@@ -425,7 +441,10 @@ export async function mergeLocalLists(localLists) {
       'SELECT word, deleted_at FROM vocabulary_items WHERE list_id = ? ORDER BY position ASC',
       [remote.id]
     );
-    const deletedWords = new Set((remoteItems || []).filter(item => item.deleted_at).map(item => item.word));
+    const deletedWords = new Set([
+      ...(remoteItems || []).filter(item => item.deleted_at).map(item => item.word),
+      ...(localDeletedWordsByList.get(remote.id) || [])
+    ]);
     const words = [...new Set((remoteItems || []).filter(item => !item.deleted_at).map(item => item.word).filter(Boolean))];
     const match = byIdLive.get(remote.id) || byNameLive.get(remote.name);
     if (match) {

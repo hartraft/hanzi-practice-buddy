@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { normalizeCustomLists } from '../src/vocabulary-model.js';
+import { normalizeCustomLists, stableVocabularyItemId } from '../src/vocabulary-model.js';
 
 test('normalizes legacy lists and creates stable IDs for migration', () => {
   const legacy = [{ name: '  HSK 1 ', words: ['你好', '你好', ' 谢谢 '] }];
@@ -17,4 +17,13 @@ test('normalizes legacy lists and creates stable IDs for migration', () => {
 test('ignores malformed list records and invalid roots', () => {
   assert.deepEqual(normalizeCustomLists(null), []);
   assert.deepEqual(normalizeCustomLists([{ name: '', words: ['字'] }, { name: 'ok', words: 'not-array' }]), []);
+});
+
+test('stable item IDs converge across devices and distinguish different words', async () => {
+  const first = await stableVocabularyItemId('list-uuid', '你好');
+  const second = await stableVocabularyItemId('list-uuid', '你好');
+  const different = await stableVocabularyItemId('list-uuid', '謝謝');
+  assert.equal(first, second);
+  assert.notEqual(first, different);
+  assert.match(first, /^[0-9a-f]{8}-[0-9a-f]{4}-5[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
 });

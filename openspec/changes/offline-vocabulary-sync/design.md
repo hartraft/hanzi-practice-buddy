@@ -1,7 +1,7 @@
 # Design: Offline-first vocabulary sync
 
 ## Decision
-Target **Supabase Postgres + PowerSync local-first sync**. Do not add CRDTs yet: independent vocabulary entries merge naturally; same-record conflicts use explicit metadata timestamps and tombstones. First verify supported PowerSync JS/Capacitor versions and build tooling. Current project uses plain script tags and Capacitor 5, so bundling and/or Capacitor upgrade may be required.
+Target **Supabase Postgres + PowerSync local-first sync**. Do not add CRDTs yet: independent vocabulary entries merge naturally; deterministic IDs and server-enforced tombstones handle concurrent additions/deletions. This branch migrates the app to Vite ESM and Capacitor 8.5.3 to meet the PowerSync Capacitor SDK requirements.
 
 ## Data model
 - `vocabulary_lists`: UUID primary key, owner UUID, name, created/updated timestamps, nullable deletion timestamp, revision/update metadata.

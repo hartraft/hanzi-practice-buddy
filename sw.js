@@ -18,7 +18,7 @@ self.addEventListener('fetch', event => {
 
   const url = new URL(request.url);
   const sameOrigin = url.origin === self.location.origin;
-  const strokeAsset = url.hostname === 'cdn.jsdelivr.net' || url.hostname.endsWith('.jsdelivr.net');
+  const strokeAsset = ['cdn.jsdelivr.net', 'unpkg.com', 'cdnjs.cloudflare.com'].includes(url.hostname) || url.hostname.endsWith('.jsdelivr.net');
   if (!sameOrigin && !strokeAsset) return;
 
   event.respondWith((async () => {

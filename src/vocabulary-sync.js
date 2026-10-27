@@ -1,6 +1,7 @@
 import { PowerSyncDatabase } from '@powersync/capacitor';
 import { column, Schema, Table } from '@powersync/web';
 import { createClient } from '@supabase/supabase-js';
+import { stableVocabularyItemId as stableItemId } from './vocabulary-model.js';
 
 const config = {
   supabaseUrl: import.meta.env.VITE_SUPABASE_URL || '',
@@ -49,16 +50,6 @@ let watcherStarted = false;
 let connectedUserId = null;
 let localWriteQueue = Promise.resolve();
 
-// Stable item IDs ensure the same word added on two offline devices converges
-// to one record. A server tombstone therefore cannot be bypassed by a new UUID.
-async function stableItemId(listId, word) {
-  const bytes = new TextEncoder().encode(`${listId}\\u0000${String(word).normalize('NFC').trim()}`);
-  const digest = new Uint8Array(await crypto.subtle.digest('SHA-256', bytes)).slice(0, 16);
-  digest[6] = (digest[6] & 0x0f) | 0x50;
-  digest[8] = (digest[8] & 0x3f) | 0x80;
-  const hex = [...digest].map(value => value.toString(16).padStart(2, '0')).join('');
-  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
-}
 
 function setStatus(status, detail = '') {
   onStatusChanged({ status, detail, configured: Boolean(supabase && database && config.powerSyncUrl), signedIn: Boolean(currentUser) });

@@ -1,3 +1,5 @@
+import { initVocabularySync, signIn, signUp, signOut, currentSyncUser, persistCustomLists, mergeLocalLists, syncConfiguration } from './vocabulary-sync.js';
+
 const converter = OpenCC.Converter({ from:'cn', to:'tw' });
 const toneColors = {1:'#007AFF',2:'#34C759',3:'#FF9500',4:'#FF3B30',5:'#8E8E93'};
 const BUILTIN_DECK_LABELS = {
@@ -42,7 +44,14 @@ function customListName(key){ return key.startsWith(CUSTOM_LIST_PREFIX) ? key.sl
 
 function saveCustomLists(){
   try{
+    for(const list of customLists){
+      if(!list.id) list.id = crypto.randomUUID();
+      if(!list.updatedAt) list.updatedAt = Date.now();
+    }
     localStorage.setItem(CUSTOM_LISTS_KEY, JSON.stringify(customLists));
+    persistCustomLists(customLists).catch(error => {
+      setSyncStatus('error', 'Local save succeeded; cloud sync will retry: ' + (error.message || String(error)));
+    });
   }catch(e){
     alert('Could not save lists: browser storage is full.');
   }
@@ -55,7 +64,10 @@ function loadCustomLists(){
     const parsed = JSON.parse(raw);
     customLists = Array.isArray(parsed)
       ? parsed.filter(l => l && typeof l.name === 'string' && l.name && Array.isArray(l.words))
+          .map(l => ({ ...l, id: l.id || crypto.randomUUID(), updatedAt: l.updatedAt || Date.now() }))
       : [];
+    // Persist generated stable IDs so future restarts and migrations reuse them.
+    localStorage.setItem(CUSTOM_LISTS_KEY, JSON.stringify(customLists));
   }catch(e){ customLists = []; }
 }
 
@@ -638,7 +650,68 @@ document.getElementById('importBtn').onclick = importWords;
 document.getElementById('pdfBtn').onclick = generatePDF;
 document.getElementById('gamesBtn').onclick = () => alert('Games coming soon: Big2, Chinese Chess');
 
-document.addEventListener('DOMContentLoaded', () => {
+function setSyncStatus(status, detail = '') {
+  const element = document.getElementById('syncStatus');
+  if (!element) return;
+  const labels = {
+    'local-only': 'Local only',
+    'signed-out': 'Signed out',
+    'syncing': 'Syncing…',
+    'synced': 'Synced',
+    'error': 'Sync needs attention'
+  };
+  element.textContent = detail ? `${labels[status] || status}: ${detail}` : (labels[status] || status);
+}
+
+function setSyncControlsSignedIn(signedIn) {
+  document.getElementById('syncSignInBtn').hidden = signedIn;
+  document.getElementById('syncSignUpBtn').hidden = signedIn;
+  document.getElementById('syncSignOutBtn').hidden = !signedIn;
+  document.getElementById('syncPassword').autocomplete = signedIn ? 'off' : 'current-password';
+}
+
+document.getElementById('syncSignInBtn').addEventListener('click', async () => {
+  const email = document.getElementById('syncEmail').value.trim();
+  const password = document.getElementById('syncPassword').value;
+  if (!email || !password) { setSyncStatus('error', 'Enter your email and password.'); return; }
+  try {
+    await signIn(email, password);
+    customLists = await mergeLocalLists(customLists);
+    localStorage.setItem(CUSTOM_LISTS_KEY, JSON.stringify(customLists));
+    renderDeckSelect();
+    await persistCustomLists(customLists);
+    setSyncControlsSignedIn(true);
+    document.getElementById('syncPassword').value = '';
+    setSyncStatus('syncing', 'Account connected; local lists are being merged.');
+  } catch (error) {
+    setSyncStatus('error', error.message || String(error));
+  }
+});
+
+document.getElementById('syncSignUpBtn').addEventListener('click', async () => {
+  const email = document.getElementById('syncEmail').value.trim();
+  const password = document.getElementById('syncPassword').value;
+  if (!email || !password) { setSyncStatus('error', 'Enter your email and password.'); return; }
+  if (password.length < 8) { setSyncStatus('error', 'Use a password with at least 8 characters.'); return; }
+  try {
+    await signUp(email, password);
+    setSyncStatus('signed-out', 'Account request sent. Verify your email if required, then sign in.');
+  } catch (error) {
+    setSyncStatus('error', error.message || String(error));
+  }
+});
+
+document.getElementById('syncSignOutBtn').addEventListener('click', async () => {
+  try {
+    await signOut();
+    setSyncControlsSignedIn(false);
+    setSyncStatus('signed-out', 'Local lists remain on this device.');
+  } catch (error) {
+    setSyncStatus('error', error.message || String(error));
+  }
+});
+
+document.addEventListener('DOMContentLoaded', async () => {
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('sw.js').catch(() => {});
   }
@@ -650,5 +723,41 @@ document.addEventListener('DOMContentLoaded', () => {
     loadDeck('novice_1');
   } else {
     loadFromURL();
+  }
+
+  const configuration = syncConfiguration();
+  if (!configuration.configured) {
+    setSyncStatus('local-only', 'Cloud sync is not configured. Local practice and lists still work.');
+  }
+  try {
+    await initVocabularySync({
+      onStatusChanged: ({ status, detail, signedIn }) => {
+        setSyncStatus(status, detail);
+        setSyncControlsSignedIn(Boolean(signedIn));
+      },
+      onListsChanged: async () => {
+        try {
+          customLists = await mergeLocalLists(customLists);
+          localStorage.setItem(CUSTOM_LISTS_KEY, JSON.stringify(customLists));
+          renderDeckSelect();
+          if (activeCustomListId && customLists.some(list => list.name === activeCustomListId)) {
+            const list = customLists.find(item => item.name === activeCustomListId);
+            els.wordList.value = list.words.join('\\n');
+          }
+        } catch (error) {
+          setSyncStatus('error', error.message || String(error));
+        }
+      }
+    });
+    const user = await currentSyncUser();
+    if (user) {
+      customLists = await mergeLocalLists(customLists);
+      localStorage.setItem(CUSTOM_LISTS_KEY, JSON.stringify(customLists));
+      renderDeckSelect();
+      await persistCustomLists(customLists);
+      setSyncControlsSignedIn(true);
+    }
+  } catch (error) {
+    setSyncStatus('error', error.message || String(error));
   }
 });

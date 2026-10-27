@@ -1,4 +1,5 @@
 import { initVocabularySync, signIn, signUp, signOut, currentSyncUser, persistCustomLists, mergeLocalLists, syncConfiguration } from './vocabulary-sync.js';
+import { normalizeCustomLists } from './vocabulary-model.js';
 
 const converter = OpenCC.Converter({ from:'cn', to:'tw' });
 const toneColors = {1:'#007AFF',2:'#34C759',3:'#FF9500',4:'#FF3B30',5:'#8E8E93'};
@@ -62,10 +63,7 @@ function loadCustomLists(){
   if(!raw){ customLists = []; return; }
   try{
     const parsed = JSON.parse(raw);
-    customLists = Array.isArray(parsed)
-      ? parsed.filter(l => l && typeof l.name === 'string' && l.name && Array.isArray(l.words))
-          .map(l => ({ ...l, id: l.id || crypto.randomUUID(), updatedAt: l.updatedAt || Date.now() }))
-      : [];
+    customLists = normalizeCustomLists(parsed);
     // Persist generated stable IDs so future restarts and migrations reuse them.
     localStorage.setItem(CUSTOM_LISTS_KEY, JSON.stringify(customLists));
   }catch(e){ customLists = []; }

@@ -49,6 +49,17 @@ let watcherStarted = false;
 let connectedUserId = null;
 let localWriteQueue = Promise.resolve();
 
+// Stable item IDs ensure the same word added on two offline devices converges
+// to one record. A server tombstone therefore cannot be bypassed by a new UUID.
+async function stableItemId(listId, word) {
+  const bytes = new TextEncoder().encode(`${listId}\\u0000${String(word).normalize('NFC').trim()}`);
+  const digest = new Uint8Array(await crypto.subtle.digest('SHA-256', bytes)).slice(0, 16);
+  digest[6] = (digest[6] & 0x0f) | 0x50;
+  digest[8] = (digest[8] & 0x3f) | 0x80;
+  const hex = [...digest].map(value => value.toString(16).padStart(2, '0')).join('');
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+}
+
 function setStatus(status, detail = '') {
   onStatusChanged({ status, detail, configured: Boolean(supabase && database && config.powerSyncUrl), signedIn: Boolean(currentUser) });
 }
@@ -80,7 +91,7 @@ class SupabasePowerSyncConnector {
       } else if (operation.op === 'DELETE') {
         // The app uses tombstones for normal deletes. This is a defensive fallback
         // for a locally removed row; the server's RLS still enforces ownership.
-        result = await supabase.from(table).delete().eq('id', operation.id);
+        result = await supabase.from(table).update({ deleted_at: new Date().toISOString() }).eq('id', operation.id);
       } else {
         throw new Error(`Unsupported PowerSync operation: ${operation.op}`);
       }
@@ -264,7 +275,7 @@ export async function persistCustomLists(lists) {
       const word = list.words[position];
       activeWords.add(word);
       const old = byWord.get(word);
-      const itemId = old?.id || crypto.randomUUID();
+      const itemId = await stableItemId(list.id, word);
       await database.execute(
         'INSERT INTO vocabulary_items (id, user_id, list_id, word, position, created_at, updated_at, deleted_at) VALUES (?, ?, ?, ?, ?, ?, ?, NULL) ON CONFLICT(id) DO UPDATE SET position = excluded.position, updated_at = excluded.updated_at, deleted_at = NULL',
         [itemId, currentUser.id, list.id, word, position, now, now]
@@ -326,7 +337,7 @@ export async function persistLocalCustomLists(lists) {
         const old = byWord.get(word);
         await database.execute(
           'INSERT INTO local_vocabulary_items (id, list_id, word, position, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?) ON CONFLICT(id) DO UPDATE SET position = excluded.position, updated_at = excluded.updated_at',
-          [old?.id || crypto.randomUUID(), list.id, word, position, now, now]
+          [await stableItemId(list.id, word), list.id, word, position, now, now]
         );
       }
       for (const item of existing || []) {

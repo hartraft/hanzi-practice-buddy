@@ -4,7 +4,7 @@
   "description": "Hanzi Practice Buddy PWA & Android app",
   "main": "index.html",
   "scripts": {
-    "build:web": "rm -rf public && mkdir -p public/data && cp manifest.json sw.js icon-192.png icon-512.png public/ && cp data/vocabulary_novice.json public/data/ && vite build",
+    "build:web": "rm -rf public && mkdir -p public/data && cp manifest.json sw.js icon-192.png icon-512.png public/ && cp data/vocabulary_novice.json public/data/ && npx powersync-web copy-assets --output public && vite build",
     "build": "npm run build:web && npx cap sync",
     "test": "node --test tests/*.test.mjs"
   },

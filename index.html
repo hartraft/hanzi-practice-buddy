@@ -187,7 +187,7 @@ function renderDeckSelect(){
     opt.textContent = BUILTIN_DECK_LABELS[k];
     els.deckSelect.appendChild(opt);
   });
-  if(els.deckSelect.querySelector(`option[value="${prevKey}"]`)){
+  if([...els.deckSelect.options].some(o => o.value === prevKey)){
     els.deckSelect.value = prevKey;
   }
 }
@@ -585,6 +585,8 @@ function saveCurrentList(){
   currentDeck = listKey(name);
   renderDeckSelect();
   els.deckSelect.value = currentDeck;
+  // Refresh practice state from the saved textarea contents as part of saving.
+  loadDeck(currentDeck);
   showCurrentListName();
   saveProgress();
   updateURL();
@@ -642,8 +644,8 @@ function importWords(){
       try{
         const data = JSON.parse(reader.result);
         let deck = data.currentDeck || 'custom';
-        // If the export came from a saved list that does not exist here, recreate it
-        if(deck.startsWith(CUSTOM_LIST_PREFIX) && !isCustomListKey(deck)){
+        // Restore exported contents even when a same-named list already exists locally.
+        if(deck.startsWith(CUSTOM_LIST_PREFIX)){
           const name = customListName(deck);
           const input = [...new Set((data.words || []).map(String).filter(Boolean))];
           if(!input.length){ alert('File contains no words'); return; }

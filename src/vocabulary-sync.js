@@ -184,7 +184,7 @@ async function handleSession(session) {
 
 async function watchRemoteLists() {
   const stream = database.watch(
-    'SELECT l.id, l.name, l.created_at, l.updated_at, l.deleted_at, i.id AS item_id, i.word, i.position, i.deleted_at AS item_deleted_at FROM vocabulary_lists l LEFT JOIN vocabulary_items i ON i.list_id = l.id WHERE l.deleted_at IS NULL ORDER BY l.updated_at DESC, i.position ASC'
+    'SELECT l.id, l.name, l.created_at, l.updated_at, l.deleted_at, i.id AS item_id, i.word, i.position, i.deleted_at AS item_deleted_at FROM vocabulary_lists l LEFT JOIN vocabulary_items i ON i.list_id = l.id WHERE l.deleted_at IS NULL ORDER BY l.updated_at DESC, i.position ASC, i.word ASC'
   );
   for await (const result of stream) {
     const rows = result.rows?._array || result.rows || [];
@@ -378,7 +378,7 @@ export async function loadLocalCustomLists() {
   const rows = await database.getAll('SELECT id, name, updated_at FROM local_vocabulary_lists ORDER BY name COLLATE NOCASE');
   const lists = [];
   for (const row of rows || []) {
-    const items = await database.getAll('SELECT word FROM local_vocabulary_items WHERE list_id = ? ORDER BY position ASC', [row.id]);
+    const items = await database.getAll('SELECT word FROM local_vocabulary_items WHERE list_id = ? ORDER BY position ASC, word ASC', [row.id]);
     lists.push({
       id: row.id,
       name: row.name,

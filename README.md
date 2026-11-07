@@ -81,4 +81,6 @@ The resulting debug APK will be located at `android/app/build/outputs/apk/debug/
 
 The planned cross-device sync uses **Supabase Auth + Postgres and PowerSync**, with local-first SQLite on Android and browser-backed SQLite on the web. Saved custom lists now use PowerSync local-only SQLite tables, with an idempotent migration from localStorage. Supabase authentication and the PowerSync cloud connector are implemented; cross-device sync still requires a configured Supabase project and PowerSync service.
 
+The vocabulary selector also includes **Course-app vocabulary (Neon PostgreSQL)**. Configure the course-app deployment's base URL in the app (or `VITE_COURSE_API_BASE_URL` at build time); the app reads the existing paginated `/api/vocabulary` endpoint and maps Traditional Chinese, Mandarin Pinyin, English meaning and tags into practice entries. This is a read-only API integration: the Android/PWA client never receives Neon database credentials. Bundled TOCFL decks and custom lists remain available offline.
+
 See [the implementation and setup guide](docs/offline-vocabulary-sync.md), [OpenSpec proposal](openspec/changes/offline-vocabulary-sync/proposal.md), and [GitHub issue #10](https://github.com/hartraft/hanzi-practice-buddy/issues/10). Do not configure service-role credentials in client code.

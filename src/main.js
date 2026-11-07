@@ -38,6 +38,7 @@ const MAX_CUSTOM_LISTS = 20;
 const CUSTOM_LIST_PREFIX = 'custom:';
 
 let customLists = [];      // [{ name, words: [], updatedAt }]
+let activeSyncUserId = null;
 let activeCustomListId = null; // id of the saved custom list currently loaded, or null
 let deckRestored = false;
 
@@ -795,15 +796,18 @@ document.addEventListener('DOMContentLoaded', async () => {
   try {
     const syncInit = await initVocabularySync({
       initialLists: customLists,
-      onStatusChanged: ({ status, detail, signedIn }) => {
+      onStatusChanged: ({ status, detail, signedIn, userId }) => {
         setSyncStatus(status, detail);
         setSyncControlsSignedIn(Boolean(signedIn));
-        if (!signedIn) {
-          // Drop the previous account's in-memory cloud snapshot on every sign-out.
+        const nextUserId = signedIn ? userId : null;
+        if ((activeSyncUserId && nextUserId && activeSyncUserId !== nextUserId) || !signedIn) {
+          // Drop the previous account's in-memory cloud snapshot on sign-out or
+          // a direct account switch before any new account data is merged.
           customLists = deviceLocalLists(customLists);
           saveLocalListCache();
           renderDeckSelect();
         }
+        activeSyncUserId = nextUserId;
       },
       onListsChanged: async () => {
         try {

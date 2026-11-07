@@ -54,6 +54,10 @@ let connectionPromise = null;
 let watcherStarted = false;
 let connectedUserId = null;
 let localWriteQueue = Promise.resolve();
+let sessionGeneration = 0;
+let legacyIsolationPromise = null;
+const LEGACY_CACHE_ISOLATION_KEY = 'hanziPracticeBuddyLocalCacheIsolationV1';
+const LEGACY_CACHE_BACKUP_KEY = 'hanziPracticeBuddyLegacyListsBackupV1';
 
 
 function setStatus(status, detail = '') {
@@ -121,10 +125,10 @@ export async function initVocabularySync(options = {}) {
   const storedLocal = await loadLocalCustomLists();
   const initialLists = options.initialLists || [];
   const mergedLocal = mergeListArrays(initialLists, storedLocal);
-  await persistLocalCustomLists(mergedLocal);
 
   const configured = Boolean(config.supabaseUrl && config.supabaseKey && config.powerSyncUrl);
   if (!configured) {
+    await persistLocalCustomLists(mergedLocal);
     setStatus('local-only', 'Saved locally in SQLite. Add cloud configuration to enable cross-device sync.');
     return { configured: false, localLists: await loadLocalCustomLists() };
   }
@@ -161,32 +165,70 @@ export async function initVocabularySync(options = {}) {
     if (document.visibilityState === 'visible') retrySync();
   });
 
-  if (data.session) await handleSession(data.session);
-  else setStatus('signed-out', 'Saved locally in SQLite. Sign in to sync across devices.');
-  return { configured: true, localLists: await loadLocalCustomLists() };
+  let legacyCacheCleared = false;
+  if (data.session) {
+    legacyCacheCleared = await handleSession(data.session);
+  } else {
+    await persistLocalCustomLists(mergedLocal);
+    setStatus('signed-out', 'Saved locally in SQLite. Sign in to sync across devices.');
+  }
+  return { configured: true, localLists: await loadLocalCustomLists(), legacyCacheCleared };
+}
+
+async function ensureLegacyCacheIsolation() {
+  if (localStorage.getItem(LEGACY_CACHE_ISOLATION_KEY) === '1') return false;
+  if (legacyIsolationPromise) return legacyIsolationPromise;
+  legacyIsolationPromise = (async () => {
+    await localWriteQueue;
+    const legacyLocalLists = await loadLocalCustomLists();
+    const legacyBrowserLists = localStorage.getItem('hanziPracticeBuddyCustomLists');
+    // Preserve a recovery copy, but never merge this ambiguous pre-fix cache into
+    // an authenticated account: older versions mixed cloud and device-local rows.
+    localStorage.setItem(LEGACY_CACHE_BACKUP_KEY, JSON.stringify({
+      browserLists: legacyBrowserLists ? JSON.parse(legacyBrowserLists) : [],
+      sqliteLists: legacyLocalLists,
+      backedUpAt: new Date().toISOString()
+    }));
+    await database.writeTransaction(async tx => {
+      await tx.execute('DELETE FROM local_vocabulary_items');
+      await tx.execute('DELETE FROM local_vocabulary_lists');
+    });
+    localStorage.removeItem('hanziPracticeBuddyCustomLists');
+    localStorage.setItem(LEGACY_CACHE_ISOLATION_KEY, '1');
+    return true;
+  })();
+  try {
+    return await legacyIsolationPromise;
+  } finally {
+    legacyIsolationPromise = null;
+  }
 }
 
 async function handleSession(session) {
   if (!session) {
+    sessionGeneration++;
     const previousUserId = connectedUserId;
     if (database && previousUserId) await database.disconnect();
     connectedUserId = null;
+    watcherStarted = false;
     currentUser = null;
     setStatus('signed-out', 'Signed out. Local practice remains available.');
-    return;
+    return false;
   }
-  if (!database || !config.powerSyncUrl) {
-    currentUser = session.user;
-    return;
-  }
-  if (connectedUserId === session.user.id) {
-    currentUser = session.user;
-    return;
-  }
+  const legacyCacheCleared = await ensureLegacyCacheIsolation();
   if (connectedUserId && connectedUserId !== session.user.id) {
+    sessionGeneration++;
     await database.disconnect();
     connectedUserId = null;
     watcherStarted = false;
+  }
+  if (!database || !config.powerSyncUrl) {
+    currentUser = session.user;
+    return legacyCacheCleared;
+  }
+  if (connectedUserId === session.user.id) {
+    currentUser = session.user;
+    return legacyCacheCleared;
   }
   currentUser = session.user;
   if (connectionPromise) return connectionPromise;
@@ -194,6 +236,7 @@ async function handleSession(session) {
     setStatus('syncing', 'Connecting to cloud sync…');
     await database.connect(new SupabasePowerSyncConnector());
     connectedUserId = session.user.id;
+    const generation = sessionGeneration;
     database.waitForFirstSync().then(() => {
       setStatus('synced', 'Cloud vocabulary is up to date.');
     }).catch(() => {
@@ -201,7 +244,7 @@ async function handleSession(session) {
     });
     if (!watcherStarted && typeof database.watch === 'function') {
       watcherStarted = true;
-      watchRemoteLists().catch(error => setStatus('error', error.message || String(error)));
+      watchRemoteLists(session.user.id, generation).catch(error => setStatus('error', error.message || String(error)));
     }
     setStatus('syncing', 'Connected; waiting for vocabulary updates.');
   })();
@@ -210,14 +253,16 @@ async function handleSession(session) {
   } finally {
     connectionPromise = null;
   }
+  return legacyCacheCleared;
 }
 
-async function watchRemoteLists() {
+async function watchRemoteLists(userId, generation) {
   const stream = database.watch(
     'SELECT l.id, l.user_id, l.name, l.created_at, l.updated_at, l.deleted_at, i.id AS item_id, i.word, i.position, i.deleted_at AS item_deleted_at FROM vocabulary_lists l LEFT JOIN vocabulary_items i ON i.list_id = l.id AND i.user_id = l.user_id WHERE l.user_id = ? AND l.deleted_at IS NULL ORDER BY l.updated_at DESC, i.position ASC, i.word ASC',
-    [currentUser.id]
+    [userId]
   );
   for await (const result of stream) {
+    if (generation !== sessionGeneration || currentUser?.id !== userId) return;
     const rows = result.rows?._array || result.rows || [];
     const byId = new Map();
     for (const row of rows) {
@@ -250,16 +295,16 @@ export async function signIn(email, password) {
   if (!supabase) throw new Error('Cloud sync is not configured. See docs/offline-vocabulary-sync.md.');
   const { data, error } = await supabase.auth.signInWithPassword({ email, password });
   if (error) throw error;
-  if (data.session) await handleSession(data.session);
-  return data.user;
+  const legacyCacheCleared = data.session ? await handleSession(data.session) : false;
+  return { user: data.user, legacyCacheCleared };
 }
 
 export async function signUp(email, password) {
   if (!supabase) throw new Error('Cloud sync is not configured. See docs/offline-vocabulary-sync.md.');
   const { data, error } = await supabase.auth.signUp({ email, password });
   if (error) throw error;
-  if (data.session) await handleSession(data.session);
-  return data.user;
+  const legacyCacheCleared = data.session ? await handleSession(data.session) : false;
+  return { user: data.user, legacyCacheCleared };
 }
 
 export async function signOut() {

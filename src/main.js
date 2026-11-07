@@ -740,7 +740,17 @@ document.getElementById('syncSignUpBtn').addEventListener('click', async () => {
   try {
     const result = await signUp(email, password);
     if (result.legacyCacheCleared) customLists = [];
-    setSyncStatus('signed-out', 'Account request sent. Verify your email if required, then sign in.');
+    const user = await currentSyncUser();
+    if (user) {
+      customLists = await mergeLocalLists(customLists);
+      saveLocalListCache();
+      renderDeckSelect();
+      await persistCustomLists(customLists);
+      setSyncControlsSignedIn(true);
+      setSyncStatus('syncing', 'Account connected; local lists are being merged.');
+    } else {
+      setSyncStatus('signed-out', 'Account request sent. Verify your email if required, then sign in.');
+    }
   } catch (error) {
     setSyncStatus('error', error.message || String(error));
   }

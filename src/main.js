@@ -1,5 +1,5 @@
 import { initVocabularySync, signIn, signUp, signOut, currentSyncUser, persistCustomLists, persistLocalCustomLists, mergeLocalLists, syncConfiguration } from './vocabulary-sync.js';
-import { normalizeCustomLists } from './vocabulary-model.js';
+import { normalizeCustomLists, deviceLocalLists } from './vocabulary-model.js';
 import { fetchCourseVocabulary, getCourseApiBaseUrl, saveCourseApiBaseUrl } from './course-vocabulary.js';
 
 const converter = OpenCC.Converter({ from:'cn', to:'tw' });
@@ -43,7 +43,7 @@ let deckRestored = false;
 
 // Cloud-owned rows must never enter the device-wide local-only cache.
 function saveLocalListCache(){
-  const localOnlyLists = customLists.filter(list => !list._cloudOwned);
+  const localOnlyLists = deviceLocalLists(customLists);
   localStorage.setItem(CUSTOM_LISTS_KEY, JSON.stringify(localOnlyLists));
 }
 

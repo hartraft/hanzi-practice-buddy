@@ -70,6 +70,13 @@ body.dark #currentListName { color: #aaa; }
   <button id="syncSignOutBtn" type="button" hidden>Sign out</button>
 </div>
 
+<div id="courseVocabularyPanel" class="controls-group" aria-label="Course-app vocabulary source">
+  <label for="courseApiBaseUrl"><b>Course-app API URL:</b></label><br>
+  <input id="courseApiBaseUrl" type="url" inputmode="url" placeholder="https://your-course-app.example" aria-label="Course-app API base URL" style="width:min(90%,420px);padding:7px;">
+  <button id="saveCourseApiUrlBtn" type="button">Save API URL</button>
+  <div id="courseApiStatus" role="status" aria-live="polite">Configure the course-app URL to load shared vocabulary from Neon.</div>
+</div>
+
 <div class="controls-group">
   <label for="deckSelect"><b>Vocabulary Deck:</b></label>
   <select id="deckSelect">

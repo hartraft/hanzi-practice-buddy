@@ -62,7 +62,7 @@ const LEGACY_CACHE_BACKUP_KEY = 'hanziPracticeBuddyLegacyListsBackupV1';
 
 
 function setStatus(status, detail = '') {
-  onStatusChanged({ status, detail, configured: Boolean(supabase && database && config.powerSyncUrl), signedIn: Boolean(currentUser) });
+  onStatusChanged({ status, detail, configured: Boolean(supabase && database && config.powerSyncUrl), signedIn: Boolean(currentUser), userId: currentUser?.id || null });
 }
 
 class SupabasePowerSyncConnector {
@@ -250,9 +250,13 @@ async function applySession(session) {
     connectedUserId = session.user.id;
     const generation = sessionGeneration;
     database.waitForFirstSync().then(() => {
-      setStatus('synced', 'Cloud vocabulary is up to date.');
+      if (generation === sessionGeneration && currentUser?.id === session.user.id) {
+        setStatus('synced', 'Cloud vocabulary is up to date.');
+      }
     }).catch(() => {
-      setStatus('syncing', 'Local vocabulary is available; waiting for cloud connection.');
+      if (generation === sessionGeneration && currentUser?.id === session.user.id) {
+        setStatus('syncing', 'Local vocabulary is available; waiting for cloud connection.');
+      }
     });
     if (!watcherStarted && typeof database.watch === 'function') {
       watcherStarted = true;

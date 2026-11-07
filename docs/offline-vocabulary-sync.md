@@ -21,6 +21,14 @@ PowerSync's Capacitor SDK is currently beta and requires Capacitor 8+, `@capacit
 
 End-to-end syncing cannot be enabled until the Supabase and PowerSync services are configured and the client integration is committed. Do not put real project credentials into source control; use a local ignored config file or build-time environment variables.
 
+## Shared course-app vocabulary source
+
+Hanzi Practice Buddy can also read the shared vocabulary already stored by `course-app` in Neon PostgreSQL. Select **Course-app vocabulary (Neon PostgreSQL)** in the Vocabulary Deck selector. Configure the course-app deployment's base URL in the app; the value is stored locally on the device. For automated builds, `VITE_COURSE_API_BASE_URL` can provide a default.
+
+The client calls the existing read-only `GET /api/vocabulary?page=0&size=200` endpoint and follows the returned page metadata until all vocabulary is loaded. Traditional Chinese is preferred for writing practice, with the API's word/simplified value as fallback. Mandarin Pinyin, English meaning/notes and tags are retained as character context. The API must be reachable from the device; browser/PWA deployments also require the course-app vocabulary route's GET-only CORS support. No Neon URL containing credentials, database password, or service-role key belongs in the app.
+
+This source is read-only and separate from custom-list persistence/sync. It does not copy the course vocabulary into a user's custom lists. Bundled TOCFL decks and local custom lists remain usable offline; fetching the shared course-app source requires connectivity.
+
 ## Schema and data semantics
 
 - `vocabulary_lists.id` and `vocabulary_items.id` are stable UUIDs.

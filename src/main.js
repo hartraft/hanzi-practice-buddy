@@ -41,6 +41,12 @@ let customLists = [];      // [{ name, words: [], updatedAt }]
 let activeCustomListId = null; // id of the saved custom list currently loaded, or null
 let deckRestored = false;
 
+// Cloud-owned rows must never enter the device-wide local-only cache.
+function saveLocalListCache(){
+  const localOnlyLists = customLists.filter(list => !list._cloudOwned);
+  localStorage.setItem(CUSTOM_LISTS_KEY, JSON.stringify(localOnlyLists));
+}
+
 function listKey(name){ return CUSTOM_LIST_PREFIX + name; }
 function customListName(key){ return key.startsWith(CUSTOM_LIST_PREFIX) ? key.slice(CUSTOM_LIST_PREFIX.length) : ''; }
 
@@ -50,7 +56,7 @@ function saveCustomLists(){
       if(!list.id) list.id = crypto.randomUUID();
       if(!list.updatedAt) list.updatedAt = Date.now();
     }
-    localStorage.setItem(CUSTOM_LISTS_KEY, JSON.stringify(customLists));
+    saveLocalListCache();
     persistLocalCustomLists(customLists).catch(error => {
       setSyncStatus('error', 'Local SQLite save failed: ' + (error.message || String(error)));
     });
@@ -69,7 +75,7 @@ function loadCustomLists(){
     const parsed = JSON.parse(raw);
     customLists = normalizeCustomLists(parsed);
     // Persist generated stable IDs so future restarts and migrations reuse them.
-    localStorage.setItem(CUSTOM_LISTS_KEY, JSON.stringify(customLists));
+    saveLocalListCache();
   }catch(e){ customLists = []; }
 }
 
@@ -714,7 +720,7 @@ document.getElementById('syncSignInBtn').addEventListener('click', async () => {
   try {
     await signIn(email, password);
     customLists = await mergeLocalLists(customLists);
-    localStorage.setItem(CUSTOM_LISTS_KEY, JSON.stringify(customLists));
+    saveLocalListCache();
     renderDeckSelect();
     await persistCustomLists(customLists);
     setSyncControlsSignedIn(true);
@@ -778,7 +784,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       onListsChanged: async () => {
         try {
           customLists = await mergeLocalLists(customLists);
-          localStorage.setItem(CUSTOM_LISTS_KEY, JSON.stringify(customLists));
+          saveLocalListCache();
           await persistLocalCustomLists(customLists);
           renderDeckSelect();
           if (activeCustomListId && customLists.some(list => list.name === activeCustomListId)) {
@@ -791,13 +797,13 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
     });
     customLists = await mergeLocalLists(syncInit.localLists || customLists);
-    localStorage.setItem(CUSTOM_LISTS_KEY, JSON.stringify(customLists));
+    saveLocalListCache();
     await persistLocalCustomLists(customLists);
     renderDeckSelect();
     const user = await currentSyncUser();
     if (user) {
       customLists = await mergeLocalLists(customLists);
-      localStorage.setItem(CUSTOM_LISTS_KEY, JSON.stringify(customLists));
+      saveLocalListCache();
       await persistLocalCustomLists(customLists);
       renderDeckSelect();
       await persistCustomLists(customLists);

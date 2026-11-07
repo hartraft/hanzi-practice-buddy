@@ -3,7 +3,7 @@ const BUILD_TIME_BASE_URL = import.meta.env?.VITE_COURSE_API_BASE_URL || '';
 
 export function normalizeCourseVocabulary(entries) {
   if (!Array.isArray(entries)) throw new Error('The course-app API did not return a vocabulary page.');
-  return entries.map((entry) => ({
+  return entries.filter((entry) => entry && typeof entry === 'object').map((entry) => ({
     id: String(entry.id || ''),
     vocabulary: String(entry.traditional || entry.word || entry.simplified || '').trim(),
     pinyin: String(entry.mandarinPinyin || ''),

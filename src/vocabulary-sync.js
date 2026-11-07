@@ -243,6 +243,7 @@ async function applySession(session) {
     return legacyCacheCleared;
   }
   currentUser = session.user;
+  setStatus('syncing', 'Preparing account sync…');
   if (connectionPromise) return connectionPromise;
   connectionPromise = (async () => {
     setStatus('syncing', 'Connecting to cloud sync…');

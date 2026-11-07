@@ -1,5 +1,6 @@
 import { initVocabularySync, signIn, signUp, signOut, currentSyncUser, persistCustomLists, persistLocalCustomLists, mergeLocalLists, syncConfiguration } from './vocabulary-sync.js';
 import { normalizeCustomLists } from './vocabulary-model.js';
+import { fetchCourseVocabulary, getCourseApiBaseUrl, saveCourseApiBaseUrl } from './course-vocabulary.js';
 
 const converter = OpenCC.Converter({ from:'cn', to:'tw' });
 const toneColors = {1:'#007AFF',2:'#34C759',3:'#FF9500',4:'#FF3B30',5:'#8E8E93'};
@@ -91,6 +92,10 @@ function renderDeckSelect(){
     opt.textContent = BUILTIN_DECK_LABELS[k];
     els.deckSelect.appendChild(opt);
   });
+  const courseOpt = document.createElement('option');
+  courseOpt.value = 'course_neon';
+  courseOpt.textContent = 'Course-app vocabulary (Neon PostgreSQL)';
+  els.deckSelect.appendChild(courseOpt);
   if([...els.deckSelect.options].some(o => o.value === prevKey)){
     els.deckSelect.value = prevKey;
   }
@@ -220,6 +225,20 @@ async function loadDeck(deckKey){
   els.customContainer.style.display = 'none';
   activeCustomListId = null;
   showCurrentListName();
+  if(deckKey === 'course_neon'){
+    els.customContainer.style.display = 'none';
+    setCourseApiStatus('Loading vocabulary from course-app…');
+    try {
+      vocabEntries = await fetchCourseVocabulary();
+      words = vocabEntries.map(entry => entry.vocabulary).filter(Boolean);
+      setupCharsFromVocab();
+      setCourseApiStatus(`Loaded ${vocabEntries.length} words from course-app.`);
+    } catch (error) {
+      setCourseApiStatus(error.message || String(error));
+      alert('Could not load course-app vocabulary: ' + (error.message || String(error)));
+    }
+    return;
+  }
   try{
     const res = await fetch('data/vocabulary_novice.json');
     const data = await res.json();
@@ -315,7 +334,7 @@ function loadFromURL(){
   const p = new URLSearchParams(location.search);
   if(p.has('deck')){
     const d = p.get('deck');
-    if(['novice_1', 'novice_2', 'both'].includes(d)){
+    if(['novice_1', 'novice_2', 'both', 'course_neon'].includes(d)){
       els.deckSelect.value = d;
       loadDeck(d);
       return;
@@ -618,6 +637,22 @@ function generatePDF(){
 
 // ===== EVENT LISTENERS =====
 els.deckSelect.onchange = (e) => loadDeck(e.target.value);
+
+function setCourseApiStatus(message) {
+  const element = document.getElementById('courseApiStatus');
+  if (element) element.textContent = message;
+}
+
+document.getElementById('courseApiBaseUrl').value = getCourseApiBaseUrl();
+document.getElementById('saveCourseApiUrlBtn').onclick = () => {
+  try {
+    const savedUrl = saveCourseApiBaseUrl(document.getElementById('courseApiBaseUrl').value);
+    document.getElementById('courseApiBaseUrl').value = savedUrl;
+    setCourseApiStatus('Course-app API URL saved on this device. Select the Course-app vocabulary deck to load it.');
+  } catch (error) {
+    setCourseApiStatus(error.message || String(error));
+  }
+};
 document.getElementById('loadBtn').onclick = loadWords;
 document.getElementById('saveListBtn').onclick = saveCurrentList;
 document.getElementById('newListBtn').onclick = newCustomList;

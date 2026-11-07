@@ -295,17 +295,19 @@ async function watchRemoteLists(userId, generation) {
 
 export async function signIn(email, password) {
   if (!supabase) throw new Error('Cloud sync is not configured. See docs/offline-vocabulary-sync.md.');
+  const needsLegacyReset = localStorage.getItem(LEGACY_CACHE_ISOLATION_KEY) !== '1';
   const { data, error } = await supabase.auth.signInWithPassword({ email, password });
   if (error) throw error;
-  const legacyCacheCleared = data.session ? await handleSession(data.session) : false;
+  const legacyCacheCleared = data.session ? (await handleSession(data.session) || needsLegacyReset) : false;
   return { user: data.user, legacyCacheCleared };
 }
 
 export async function signUp(email, password) {
   if (!supabase) throw new Error('Cloud sync is not configured. See docs/offline-vocabulary-sync.md.');
+  const needsLegacyReset = localStorage.getItem(LEGACY_CACHE_ISOLATION_KEY) !== '1';
   const { data, error } = await supabase.auth.signUp({ email, password });
   if (error) throw error;
-  const legacyCacheCleared = data.session ? await handleSession(data.session) : false;
+  const legacyCacheCleared = data.session ? (await handleSession(data.session) || needsLegacyReset) : false;
   return { user: data.user, legacyCacheCleared };
 }
 

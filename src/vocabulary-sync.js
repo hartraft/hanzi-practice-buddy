@@ -184,14 +184,16 @@ async function ensureLegacyCacheIsolation() {
     const legacyBrowserLists = localStorage.getItem('hanziPracticeBuddyCustomLists');
     // Preserve a recovery copy, but never merge this ambiguous pre-fix cache into
     // an authenticated account: older versions mixed cloud and device-local rows.
+    let parsedBrowserLists = [];
+    try { parsedBrowserLists = legacyBrowserLists ? JSON.parse(legacyBrowserLists) : []; } catch {}
     localStorage.setItem(LEGACY_CACHE_BACKUP_KEY, JSON.stringify({
-      browserLists: legacyBrowserLists ? JSON.parse(legacyBrowserLists) : [],
+      browserLists: parsedBrowserLists,
       sqliteLists: legacyLocalLists,
       backedUpAt: new Date().toISOString()
     }));
-    await database.writeTransaction(async tx => {
-      await tx.execute('DELETE FROM local_vocabulary_items');
-      await tx.execute('DELETE FROM local_vocabulary_lists');
+    await database.writeTransaction(async () => {
+      await database.execute('DELETE FROM local_vocabulary_items');
+      await database.execute('DELETE FROM local_vocabulary_lists');
     });
     localStorage.removeItem('hanziPracticeBuddyCustomLists');
     localStorage.setItem(LEGACY_CACHE_ISOLATION_KEY, '1');

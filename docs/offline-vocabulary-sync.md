@@ -1,6 +1,6 @@
 # Offline-first vocabulary sync
 
-The app now uses PowerSync's local-only SQLite tables for saved custom vocabulary on Android and the browser. Existing localStorage lists are normalized with stable IDs and migrated into SQLite; localStorage remains as a compatibility/recovery copy. The cloud sync client and account controls are implemented, but cross-device sync is not active until a Supabase project and PowerSync service are configured and end-to-end tested.
+The app uses PowerSync's local-only SQLite tables for device-local custom vocabulary and PowerSync's authenticated tables for cloud-owned lists. Cloud-owned lists are tagged in memory and are never copied into the shared localStorage or local-only SQLite cache. Remote queries are filtered by the active user, and the previous PowerSync connection is disconnected before a different account is connected. The cloud sync client and account controls are implemented, but cross-device sync is not active until a Supabase project and PowerSync service are configured and end-to-end tested.
 
 ## Architecture
 
@@ -37,19 +37,18 @@ This source is read-only and separate from custom-list persistence/sync. It does
 - `deleted_at` is reserved for soft deletion/tombstones. The client must not hard-delete synced records until a safe tombstone-retention strategy exists.
 - The current schema keeps `updated_at` server-managed on updates. Client conflict resolution must not trust arbitrary client timestamps as authoritative.
 
-## Migration requirements for the client integration
+## Account-isolation migration
 
-1. Read `hanziPracticeBuddyCustomLists` from existing localStorage.
-2. Assign stable UUIDs and normalize each word to an item row.
-3. Use a persisted migration marker or deterministic identity mapping so repeated migration attempts are safe.
-4. Verify the local SQLite rows before marking migration complete. Do not delete the legacy localStorage data in the first release.
-5. When a user signs in on a device that already has cloud lists, merge by stable IDs; do not replace the cloud snapshot with an older local snapshot.
+Older builds mixed cloud-owned lists into an unscoped device-local cache. Because those cached records cannot reliably be distinguished from genuine device-local lists, the first authenticated sign-in after this fix makes a recovery copy under the localStorage key `hanziPracticeBuddyLegacyListsBackupV1`, clears the ambiguous local-only SQLite and localStorage cache, and records `hanziPracticeBuddyLocalCacheIsolationV1`. The ambiguous backup is deliberately not merged into any account; review/recover it only in a signed-out local session. This one-time reset prevents a previous account's cached cloud lists from being uploaded to or displayed in a different account.
+
+New cloud-owned lists stay in the authenticated PowerSync tables and are excluded from device-local persistence. New device-local lists continue to use the local-only SQLite tables. The cache isolation marker is device-scoped and avoids repeating the reset on later sign-ins.
 
 ## Validation checklist
 
 - [ ] Existing app tests and Android/web builds pass on the current commit.
 - [x] PowerSync SDK peer dependencies confirmed; Capacitor 8 and a module-aware build are now configured in the branch.
-- [x] Existing local lists are normalized with stable IDs and migrated to local-only SQLite tables idempotently.
+- [x] Device-local lists are normalized with stable IDs and stored in local-only SQLite tables.
+- [x] Cloud-owned lists are excluded from the shared device-local cache; legacy ambiguous cache is isolated on first authenticated sign-in.
 - [ ] Physically test create/edit/delete in airplane mode, force-stop/restart, and confirm persistence on Android and browser.
 - [ ] Two authenticated clients preserve distinct concurrent word additions after reconnecting.
 - [ ] Delete a word/list on one client while the other is offline; reconnect and verify no resurrection.
@@ -60,6 +59,6 @@ This source is read-only and separate from custom-list persistence/sync. It does
 
 - [x] Issue and OpenSpec proposal/design/spec created.
 - [x] Initial Postgres schema and RLS policies committed.
-- [ ] Local SQLite storage and idempotent migration.
-- [ ] Auth, PowerSync connector and sync rules.
-- [ ] UI sync state and end-to-end tests.
+- [x] Local SQLite storage and device-local list persistence.
+- [x] Auth, PowerSync connector and user-filtered sync queries.
+- [ ] Live Supabase/PowerSync configuration, two-account RLS tests, and Android offline/restart validation.

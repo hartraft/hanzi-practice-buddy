@@ -782,6 +782,12 @@ document.addEventListener('DOMContentLoaded', async () => {
       onStatusChanged: ({ status, detail, signedIn }) => {
         setSyncStatus(status, detail);
         setSyncControlsSignedIn(Boolean(signedIn));
+        if (!signedIn) {
+          // Drop the previous account's in-memory cloud snapshot on every sign-out.
+          customLists = deviceLocalLists(customLists);
+          saveLocalListCache();
+          renderDeckSelect();
+        }
       },
       onListsChanged: async () => {
         try {

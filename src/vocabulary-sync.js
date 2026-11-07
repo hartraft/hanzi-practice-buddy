@@ -56,6 +56,7 @@ let connectedUserId = null;
 let localWriteQueue = Promise.resolve();
 let sessionGeneration = 0;
 let legacyIsolationPromise = null;
+let sessionTransition = Promise.resolve();
 const LEGACY_CACHE_ISOLATION_KEY = 'hanziPracticeBuddyLocalCacheIsolationV1';
 const LEGACY_CACHE_BACKUP_KEY = 'hanziPracticeBuddyLegacyListsBackupV1';
 
@@ -207,6 +208,12 @@ async function ensureLegacyCacheIsolation() {
 }
 
 async function handleSession(session) {
+  const transition = sessionTransition.then(() => applySession(session));
+  sessionTransition = transition.catch(() => {});
+  return transition;
+}
+
+async function applySession(session) {
   if (!session) {
     sessionGeneration++;
     const previousUserId = connectedUserId;

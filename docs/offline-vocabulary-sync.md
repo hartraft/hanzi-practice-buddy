@@ -41,7 +41,7 @@ This source is read-only and separate from custom-list persistence/sync. It does
 
 Older builds mixed cloud-owned lists into an unscoped device-local cache. Because those cached records cannot reliably be distinguished from genuine device-local lists, the first authenticated sign-in after this fix makes a recovery copy under the localStorage key `hanziPracticeBuddyLegacyListsBackupV1`, clears the ambiguous local-only SQLite and localStorage cache, and records `hanziPracticeBuddyLocalCacheIsolationV1`. The ambiguous backup is deliberately not merged into any account; review/recover it only in a signed-out local session. This one-time reset prevents a previous account's cached cloud lists from being uploaded to or displayed in a different account.
 
-New cloud-owned lists stay in the authenticated PowerSync tables and are excluded from device-local persistence. New device-local lists continue to use the local-only SQLite tables. The cache isolation marker is device-scoped and avoids repeating the reset on later sign-ins.
+New cloud-owned lists stay in the authenticated PowerSync tables and are excluded from device-local persistence. The in-memory cloud snapshot is also dropped on every sign-out. New device-local lists continue to use the local-only SQLite tables. The cache isolation marker is device-scoped and avoids repeating the reset on later sign-ins.
 
 ## Validation checklist
 

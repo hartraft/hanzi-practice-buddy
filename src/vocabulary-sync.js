@@ -123,15 +123,18 @@ export async function initVocabularySync(options = {}) {
     schema,
     database: { dbFilename: 'hanzi-vocabulary.sqlite' }
   });
+  // Run before reading any legacy cache, even when currently signed out: a prior
+  // account's cloud snapshot must not flash in the signed-out UI on a shared device.
+  const legacyCacheClearedAtStartup = await ensureLegacyCacheIsolation();
   const storedLocal = await loadLocalCustomLists();
-  const initialLists = options.initialLists || [];
+  const initialLists = legacyCacheClearedAtStartup ? [] : (options.initialLists || []);
   const mergedLocal = mergeListArrays(initialLists, storedLocal);
 
   const configured = Boolean(config.supabaseUrl && config.supabaseKey && config.powerSyncUrl);
   if (!configured) {
     await persistLocalCustomLists(mergedLocal);
     setStatus('local-only', 'Saved locally in SQLite. Add cloud configuration to enable cross-device sync.');
-    return { configured: false, localLists: await loadLocalCustomLists() };
+    return { configured: false, localLists: await loadLocalCustomLists(), legacyCacheCleared: legacyCacheClearedAtStartup };
   }
 
   supabase = createClient(config.supabaseUrl, config.supabaseKey, {
@@ -166,9 +169,9 @@ export async function initVocabularySync(options = {}) {
     if (document.visibilityState === 'visible') retrySync();
   });
 
-  let legacyCacheCleared = false;
+  let legacyCacheCleared = legacyCacheClearedAtStartup;
   if (data.session) {
-    legacyCacheCleared = await handleSession(data.session);
+    legacyCacheCleared = (await handleSession(data.session)) || legacyCacheClearedAtStartup;
   } else {
     await persistLocalCustomLists(mergedLocal);
     setStatus('signed-out', 'Saved locally in SQLite. Sign in to sync across devices.');

@@ -84,14 +84,14 @@ create policy "Users manage their own vocabulary items"
     user_id = (select auth.uid())
     and exists (
       select 1 from public.vocabulary_lists l
-      where l.id = vocabulary_items.list_id and l.user_id = (select auth.uid()) and l.deleted_at is null and l.deleted_at is null
+      where l.id = vocabulary_items.list_id and l.user_id = (select auth.uid())
     )
   )
   with check (
     user_id = (select auth.uid())
     and exists (
       select 1 from public.vocabulary_lists l
-      where l.id = vocabulary_items.list_id and l.user_id = (select auth.uid()) and l.deleted_at is null
+      where l.id = vocabulary_items.list_id and l.user_id = (select auth.uid()) 
     )
   );
 

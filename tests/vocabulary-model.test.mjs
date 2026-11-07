@@ -27,3 +27,12 @@ test('stable item IDs converge across devices and distinguish different words', 
   assert.notEqual(first, different);
   assert.match(first, /^[0-9a-f]{8}-[0-9a-f]{4}-5[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
 });
+
+
+test('device-local cache excludes cloud-owned lists', async () => {
+  const { deviceLocalLists } = await import('../src/vocabulary-model.js');
+  const local = { id: 'local', name: 'Local', words: ['你好'] };
+  const remote = { id: 'remote', _cloudOwned: true, name: 'Cloud', words: ['學習'] };
+  assert.deepEqual(deviceLocalLists([local, remote]), [local]);
+  assert.deepEqual(deviceLocalLists(null), []);
+});

@@ -36,3 +36,26 @@ test('normalizes a safe course-app base URL', () => {
   assert.throws(() => normalizeCourseApiBaseUrl('https://user:pass@course.example'));
   assert.throws(() => normalizeCourseApiBaseUrl('file:///tmp/course'));
 });
+
+test('fetches every page from the course-app vocabulary API', async () => {
+  const requested = [];
+  const fetchImpl = async (url) => {
+    requested.push(url.toString());
+    const page = Number(new URL(url).searchParams.get('page'));
+    return {
+      ok: true,
+      json: async () => ({
+        totalPages: 2,
+        content: page === 0
+          ? [{ id: '1', traditional: '學' }]
+          : [{ id: '2', traditional: '習' }]
+      })
+    };
+  };
+  const { fetchCourseVocabulary } = await import('../src/course-vocabulary.js');
+  const entries = await fetchCourseVocabulary({ fetchImpl, baseUrl: 'https://course.example' });
+  assert.deepEqual(entries.map(entry => entry.vocabulary), ['學', '習']);
+  assert.equal(requested.length, 2);
+  assert.match(requested[0], /page=0/);
+  assert.match(requested[1], /page=1/);
+});

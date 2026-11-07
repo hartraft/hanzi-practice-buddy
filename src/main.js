@@ -69,6 +69,12 @@ function saveCustomLists(){
 }
 
 function loadCustomLists(){
+  // Do not render pre-fix cache data before the sync initializer can back it up
+  // and clear the ambiguous account-mixed snapshot.
+  if (localStorage.getItem('hanziPracticeBuddyLocalCacheIsolationV1') !== '1') {
+    customLists = [];
+    return;
+  }
   const raw = localStorage.getItem(CUSTOM_LISTS_KEY);
   if(!raw){ customLists = []; return; }
   try{

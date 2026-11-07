@@ -168,15 +168,27 @@ export async function initVocabularySync(options = {}) {
 
 async function handleSession(session) {
   if (!session) {
-    currentUser = null;
+    const previousUserId = connectedUserId;
+    if (database && previousUserId) await database.disconnect();
     connectedUserId = null;
-    if (database && connectedUserId) await database.disconnect();
+    currentUser = null;
     setStatus('signed-out', 'Signed out. Local practice remains available.');
     return;
   }
+  if (!database || !config.powerSyncUrl) {
+    currentUser = session.user;
+    return;
+  }
+  if (connectedUserId === session.user.id) {
+    currentUser = session.user;
+    return;
+  }
+  if (connectedUserId && connectedUserId !== session.user.id) {
+    await database.disconnect();
+    connectedUserId = null;
+    watcherStarted = false;
+  }
   currentUser = session.user;
-  if (!database || !config.powerSyncUrl) return;
-  if (connectedUserId === session.user.id) return;
   if (connectionPromise) return connectionPromise;
   connectionPromise = (async () => {
     setStatus('syncing', 'Connecting to cloud sync…');
@@ -202,7 +214,8 @@ async function handleSession(session) {
 
 async function watchRemoteLists() {
   const stream = database.watch(
-    'SELECT l.id, l.name, l.created_at, l.updated_at, l.deleted_at, i.id AS item_id, i.word, i.position, i.deleted_at AS item_deleted_at FROM vocabulary_lists l LEFT JOIN vocabulary_items i ON i.list_id = l.id WHERE l.deleted_at IS NULL ORDER BY l.updated_at DESC, i.position ASC, i.word ASC'
+    'SELECT l.id, l.user_id, l.name, l.created_at, l.updated_at, l.deleted_at, i.id AS item_id, i.word, i.position, i.deleted_at AS item_deleted_at FROM vocabulary_lists l LEFT JOIN vocabulary_items i ON i.list_id = l.id AND i.user_id = l.user_id WHERE l.user_id = ? AND l.deleted_at IS NULL ORDER BY l.updated_at DESC, i.position ASC, i.word ASC',
+    [currentUser.id]
   );
   for await (const result of stream) {
     const rows = result.rows?._array || result.rows || [];
@@ -212,6 +225,7 @@ async function watchRemoteLists() {
       if (!byId.has(row.id)) {
         byId.set(row.id, {
           id: row.id,
+          _cloudOwned: true,
           name: row.name,
           words: [],
           updatedAt: row.updated_at ? Date.parse(row.updated_at) || Date.now() : Date.now()
@@ -355,11 +369,14 @@ function mergeListArrays(first, second) {
 
 export async function persistLocalCustomLists(lists) {
   if (!database) return;
+  // Cloud-owned lists are already stored by PowerSync in the authenticated
+  // database. Never copy them into the shared device-local cache.
+  const localOnlyLists = lists.filter(list => !list._cloudOwned);
   // Serialize writes so quick successive Save/Delete actions cannot interleave.
   localWriteQueue = localWriteQueue.then(async () => {
     const now = new Date().toISOString();
     const currentIds = new Set();
-    for (const list of lists) {
+    for (const list of localOnlyLists) {
       if (!list.id) list.id = crypto.randomUUID();
       currentIds.add(list.id);
       const listUpdatedAt = new Date(list.updatedAt || Date.now()).toISOString();
@@ -467,10 +484,11 @@ export async function mergeLocalLists(localLists) {
       const remoteUpdatedAt = Date.parse(remote.updated_at) || 0;
       if (remoteUpdatedAt >= (match.updatedAt || 0)) match.name = remote.name;
       match.id = remote.id;
+      match._cloudOwned = true;
       match.words = [...new Set([...match.words.filter(word => !deletedWords.has(word)), ...words])];
       match.updatedAt = Math.max(match.updatedAt || 0, remoteUpdatedAt);
     } else {
-      const list = { id: remote.id, name: remote.name, words, updatedAt: Date.parse(remote.updated_at) || Date.now() };
+      const list = { id: remote.id, _cloudOwned: true, name: remote.name, words, updatedAt: Date.parse(remote.updated_at) || Date.now() };
       surviving.push(list);
       byIdLive.set(list.id, list);
       byNameLive.set(list.name, list);

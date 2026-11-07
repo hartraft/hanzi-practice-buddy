@@ -718,7 +718,8 @@ document.getElementById('syncSignInBtn').addEventListener('click', async () => {
   const password = document.getElementById('syncPassword').value;
   if (!email || !password) { setSyncStatus('error', 'Enter your email and password.'); return; }
   try {
-    await signIn(email, password);
+    const result = await signIn(email, password);
+    if (result.legacyCacheCleared) customLists = [];
     customLists = await mergeLocalLists(customLists);
     saveLocalListCache();
     renderDeckSelect();
@@ -737,7 +738,8 @@ document.getElementById('syncSignUpBtn').addEventListener('click', async () => {
   if (!email || !password) { setSyncStatus('error', 'Enter your email and password.'); return; }
   if (password.length < 8) { setSyncStatus('error', 'Use a password with at least 8 characters.'); return; }
   try {
-    await signUp(email, password);
+    const result = await signUp(email, password);
+    if (result.legacyCacheCleared) customLists = [];
     setSyncStatus('signed-out', 'Account request sent. Verify your email if required, then sign in.');
   } catch (error) {
     setSyncStatus('error', error.message || String(error));
@@ -796,6 +798,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
       }
     });
+    if (syncInit.legacyCacheCleared) customLists = [];
     customLists = await mergeLocalLists(syncInit.localLists || customLists);
     saveLocalListCache();
     await persistLocalCustomLists(customLists);

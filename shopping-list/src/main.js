@@ -18,6 +18,8 @@ let currentHousehold = null;
 let currentList = null;
 let powerSync = null;
 let items = [];
+let bootPromise = null;
+let bootPromiseUserId = null;
 
 function showMessage(message, isError = false) {
   const target = document.querySelector('#toast');
@@ -75,7 +77,8 @@ async function initializePowerSync() {
   if (powerSync) return;
   if (!powerSyncUrl) throw new Error('PowerSync URL is not configured.');
   powerSync = new PowerSyncDatabase({ schema: AppSchema, database: { dbFilename: 'household-shopping.sqlite' } });
-  await powerSync.connect(new SupabasePowerSyncConnector(supabase, powerSyncUrl));
+  // Connect in the background: local SQLite remains usable while the device is offline.
+  powerSync.connect(new SupabasePowerSyncConnector(supabase, powerSyncUrl));
 }
 function renderCreateHousehold() {
   renderShell(`<section class="auth-screen"><div class="brand-mark">✓</div><p class="eyebrow">WELCOME</p><h1>Start your<br>household list.</h1><p class="muted">Create a shared space, then invite your partner using their Google account email.</p><button class="primary-button" id="create-household">Create household</button><button class="text-button" id="sign-out">Sign out</button></section>`);
@@ -224,22 +227,105 @@ async function signOut() {
     currentUser = null; currentHousehold = null; currentList = null; renderLogin();
   } catch (error) { showMessage(error.message || 'Could not sign out.', true); }
 }
-async function boot(session) {
-  if (!session?.user) { currentUser = null; renderLogin(); return; }
+async function findCachedHousehold(userId) {
+  if (!powerSync) return null;
+  const memberships = await powerSync.getAll(
+    'SELECT household_id FROM household_members WHERE user_id = ? LIMIT 1',
+    [userId]
+  );
+  if (!memberships.length) return null;
+  const householdId = memberships[0].household_id;
+  const [households, lists] = await Promise.all([
+    powerSync.getAll('SELECT id, name FROM households WHERE id = ? LIMIT 1', [householdId]),
+    powerSync.getAll('SELECT id, name FROM shopping_lists WHERE household_id = ? ORDER BY created_at LIMIT 1', [householdId])
+  ]);
+  if (!households.length || !lists.length) return null;
+  return { household: households[0], list: lists[0] };
+}
+
+function renderOfflineUnavailable() {
+  renderShell(`<section class="auth-screen"><div class="brand-mark">✓</div><p class="eyebrow">OFFLINE</p><h1>Your list<br>isn't cached yet.</h1><p class="muted">Connect to the internet once to load your shared household list. After that, shopping and checking off items will work offline.</p><button class="primary-button" onclick="location.reload()">Try again</button></section>`);
+}
+
+async function performBoot(session) {
+  if (!session?.user) {
+    currentUser = null;
+    currentHousehold = null;
+    currentList = null;
+    renderLogin();
+    return;
+  }
+
   currentUser = session.user;
   try {
-    const membership = await findMembership(currentUser.id);
-    if (membership) {
-      const result = await getHouseholdAndList(membership.household_id);
-      await openHousehold(result.household, result.list); return;
+    // Start PowerSync first so a previously downloaded household remains
+    // available from SQLite when Supabase or the network cannot be reached.
+    await initializePowerSync();
+
+    if (navigator.onLine) {
+      try {
+        const membership = await findMembership(currentUser.id);
+        if (membership) {
+          const result = await getHouseholdAndList(membership.household_id);
+          await openHousehold(result.household, result.list);
+          return;
+        }
+
+        const invitations = await findPendingInvitations(currentUser.email);
+        if (invitations.length) {
+          renderInvitations(invitations);
+          return;
+        }
+
+        renderCreateHousehold();
+        return;
+      } catch (remoteError) {
+        console.warn('Remote household lookup failed; trying cached SQLite data.', remoteError);
+      }
     }
-    const invitations = await findPendingInvitations(currentUser.email);
-    if (invitations.length) { renderInvitations(invitations); return; }
+
+    const cached = await findCachedHousehold(currentUser.id);
+    if (cached) {
+      await openHousehold(cached.household, cached.list);
+      return;
+    }
+
+    if (!navigator.onLine) {
+      renderOfflineUnavailable();
+      return;
+    }
+
     renderCreateHousehold();
   } catch (error) {
-    console.error(error); showMessage(error.message || 'Could not load your household.', true); renderCreateHousehold();
+    console.error(error);
+    try {
+      const cached = await findCachedHousehold(currentUser.id);
+      if (cached) {
+        await openHousehold(cached.household, cached.list);
+        return;
+      }
+    } catch (cacheError) {
+      console.error('Could not load cached household data.', cacheError);
+    }
+    showMessage(error.message || 'Could not load your household.', true);
+    if (navigator.onLine) renderCreateHousehold();
+    else renderOfflineUnavailable();
   }
 }
+
+function boot(session) {
+  const userId = session?.user?.id || null;
+  if (bootPromise && bootPromiseUserId === userId) return bootPromise;
+  if (currentUser?.id === userId && currentList) return Promise.resolve();
+
+  bootPromiseUserId = userId;
+  bootPromise = performBoot(session).finally(() => {
+    bootPromise = null;
+    bootPromiseUserId = null;
+  });
+  return bootPromise;
+}
+
 async function start() {
   if (!isConfigured || !powerSyncUrl) { renderSetupError(); return; }
   if (Capacitor.isNativePlatform()) {

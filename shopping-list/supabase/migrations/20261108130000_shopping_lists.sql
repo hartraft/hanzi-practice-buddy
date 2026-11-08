@@ -37,14 +37,18 @@ create index if not exists shopping_lists_household_idx on public.shopping_lists
 create index if not exists shopping_items_list_position_idx on public.shopping_items(list_id, position);
 create index if not exists household_invitations_email_idx on public.household_invitations(lower(invitee_email));
 
-create or replace function public.is_household_member(target_household uuid)
+create schema if not exists private;
+revoke all on schema private from public, anon;
+grant usage on schema private to authenticated;
+
+create or replace function private.is_household_member(target_household uuid)
 returns boolean language sql stable security definer set search_path = ''
 as $$
   select exists (select 1 from public.household_members hm
     where hm.household_id = target_household and hm.user_id = (select auth.uid()));
 $$;
-revoke all on function public.is_household_member(uuid) from public, anon;
-grant execute on function public.is_household_member(uuid) to authenticated;
+revoke all on function private.is_household_member(uuid) from public, anon;
+grant execute on function private.is_household_member(uuid) to authenticated;
 
 create or replace function public.add_household_creator()
 returns trigger language plpgsql security definer set search_path = ''

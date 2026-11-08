@@ -17,7 +17,6 @@ let currentUser = null;
 let currentHousehold = null;
 let currentList = null;
 let powerSync = null;
-let watchController = null;
 let items = [];
 
 function showMessage(message, isError = false) {
@@ -76,7 +75,6 @@ async function initializePowerSync() {
   if (powerSync) return;
   if (!powerSyncUrl) throw new Error('PowerSync URL is not configured.');
   powerSync = new PowerSyncDatabase({ schema: AppSchema, database: { dbFilename: 'household-shopping.sqlite' } });
-  await powerSync.init();
   await powerSync.connect(new SupabasePowerSyncConnector(supabase, powerSyncUrl));
 }
 function renderCreateHousehold() {
@@ -137,19 +135,17 @@ function renderShoppingList() {
 }
 async function startWatchingItems() {
   if (!powerSync || !currentList) return;
-  if (watchController) watchController.abort();
-  watchController = new AbortController();
   const sql = `SELECT shopping_items.*, COALESCE(household_members.display_name, 'Household member') AS checked_by_name
     FROM shopping_items LEFT JOIN household_members
       ON household_members.user_id = shopping_items.checked_by AND household_members.household_id = ?
     WHERE shopping_items.list_id = ?
     ORDER BY shopping_items.is_checked ASC, shopping_items.position ASC, shopping_items.created_at ASC`;
   try {
-    for await (const result of powerSync.watch(sql, [currentHousehold.id, currentList.id], { signal: watchController.signal })) {
+    for await (const result of powerSync.watch(sql, [currentHousehold.id, currentList.id])) {
       items = result.rows?._array || []; renderItems();
     }
   } catch (error) {
-    if (error.name !== 'AbortError') { console.error(error); showMessage('Live list updates are temporarily unavailable.', true); }
+    console.error(error); showMessage('Live list updates are temporarily unavailable.', true);
   }
 }
 function createItemRow(item) {
@@ -223,7 +219,6 @@ function updateOnlineStatus() {
 }
 async function signOut() {
   try {
-    if (watchController) watchController.abort();
     if (powerSync) { await powerSync.disconnectAndClear(); powerSync = null; }
     await supabase.auth.signOut();
     currentUser = null; currentHousehold = null; currentList = null; renderLogin();

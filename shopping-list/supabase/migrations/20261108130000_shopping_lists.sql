@@ -19,8 +19,9 @@ create table if not exists public.shopping_lists (
 create table if not exists public.shopping_items (
   id uuid primary key, list_id uuid not null references public.shopping_lists(id) on delete cascade,
   name text not null check (length(trim(name)) between 1 and 120), quantity text, notes text,
-  is_checked boolean not null default false, checked_by uuid references auth.users(id) on delete set null,
-  checked_at timestamptz, created_by uuid not null references auth.users(id) on delete cascade,
+  is_checked integer not null default 0 check (is_checked in (0, 1)),
+  checked_by uuid references auth.users(id) on delete set null, checked_at timestamptz,
+  created_by uuid not null references auth.users(id) on delete cascade,
   position integer not null default 0, created_at timestamptz not null default now(), updated_at timestamptz not null default now()
 );
 create table if not exists public.household_invitations (
@@ -36,7 +37,6 @@ create index if not exists shopping_lists_household_idx on public.shopping_lists
 create index if not exists shopping_items_list_position_idx on public.shopping_items(list_id, position);
 create index if not exists household_invitations_email_idx on public.household_invitations(lower(invitee_email));
 
--- Narrow SECURITY DEFINER membership helper avoids recursive membership-table RLS.
 create or replace function public.is_household_member(target_household uuid)
 returns boolean language sql stable security definer set search_path = ''
 as $$
@@ -79,7 +79,8 @@ begin
   end if;
   select hi.household_id into target_household from public.household_invitations hi
   where hi.id = invitation_uuid and lower(hi.invitee_email) = current_email
-    and hi.accepted_at is null and hi.expires_at > now() for update;
+    and hi.accepted_at is null and hi.expires_at > now()
+  for update;
   if target_household is null then
     raise exception 'Invitation not found, expired, or addressed to another account';
   end if;
@@ -104,37 +105,28 @@ alter table public.shopping_items enable row level security;
 alter table public.household_invitations enable row level security;
 
 drop policy if exists "household members can read households" on public.households;
-create policy "household members can read households" on public.households for select to authenticated
-using (public.is_household_member(id));
+create policy "household members can read households" on public.households for select to authenticated using (public.is_household_member(id));
 drop policy if exists "users can create their own household" on public.households;
-create policy "users can create their own household" on public.households for insert to authenticated
-with check (created_by = (select auth.uid()));
+create policy "users can create their own household" on public.households for insert to authenticated with check (created_by = (select auth.uid()));
 
 drop policy if exists "household members can read membership" on public.household_members;
-create policy "household members can read membership" on public.household_members for select to authenticated
-using (public.is_household_member(household_id));
+create policy "household members can read membership" on public.household_members for select to authenticated using (public.is_household_member(household_id));
 
 drop policy if exists "household members can read lists" on public.shopping_lists;
-create policy "household members can read lists" on public.shopping_lists for select to authenticated
-using (public.is_household_member(household_id));
+create policy "household members can read lists" on public.shopping_lists for select to authenticated using (public.is_household_member(household_id));
 drop policy if exists "household members can create lists" on public.shopping_lists;
-create policy "household members can create lists" on public.shopping_lists for insert to authenticated
-with check (created_by = (select auth.uid()) and public.is_household_member(household_id));
+create policy "household members can create lists" on public.shopping_lists for insert to authenticated with check (created_by = (select auth.uid()) and public.is_household_member(household_id));
 drop policy if exists "household members can update lists" on public.shopping_lists;
-create policy "household members can update lists" on public.shopping_lists for update to authenticated
-using (public.is_household_member(household_id)) with check (public.is_household_member(household_id));
+create policy "household members can update lists" on public.shopping_lists for update to authenticated using (public.is_household_member(household_id)) with check (public.is_household_member(household_id));
 drop policy if exists "household members can delete lists" on public.shopping_lists;
-create policy "household members can delete lists" on public.shopping_lists for delete to authenticated
-using (public.is_household_member(household_id));
+create policy "household members can delete lists" on public.shopping_lists for delete to authenticated using (public.is_household_member(household_id));
 
 drop policy if exists "household members can read shopping items" on public.shopping_items;
 create policy "household members can read shopping items" on public.shopping_items for select to authenticated
-using (exists (select 1 from public.shopping_lists sl where sl.id = shopping_items.list_id
-  and public.is_household_member(sl.household_id)));
+using (exists (select 1 from public.shopping_lists sl where sl.id = shopping_items.list_id and public.is_household_member(sl.household_id)));
 drop policy if exists "household members can add shopping items" on public.shopping_items;
 create policy "household members can add shopping items" on public.shopping_items for insert to authenticated
-with check (created_by = (select auth.uid()) and exists (
-  select 1 from public.shopping_lists sl where sl.id = shopping_items.list_id and public.is_household_member(sl.household_id)));
+with check (created_by = (select auth.uid()) and exists (select 1 from public.shopping_lists sl where sl.id = shopping_items.list_id and public.is_household_member(sl.household_id)));
 drop policy if exists "household members can update shopping items" on public.shopping_items;
 create policy "household members can update shopping items" on public.shopping_items for update to authenticated
 using (exists (select 1 from public.shopping_lists sl where sl.id = shopping_items.list_id and public.is_household_member(sl.household_id)))
@@ -150,24 +142,30 @@ drop policy if exists "household members can create invitations" on public.house
 create policy "household members can create invitations" on public.household_invitations for insert to authenticated
 with check (invited_by = (select auth.uid()) and accepted_at is null and public.is_household_member(household_id));
 
--- Explicit grants are required for the Data API on newer Supabase projects.
 grant select, insert, update, delete on public.households to authenticated;
 grant select on public.household_members to authenticated;
 grant select, insert, update, delete on public.shopping_lists to authenticated;
 grant select, insert, update, delete on public.shopping_items to authenticated;
 grant select, insert on public.household_invitations to authenticated;
-grant all on public.households, public.household_members, public.shopping_lists,
-  public.shopping_items, public.household_invitations to service_role;
+grant all on public.households, public.household_members, public.shopping_lists, public.shopping_items, public.household_invitations to service_role;
 
--- PowerSync's logical replication publication; leave unrelated tables unchanged.
+-- Keep the PowerSync publication separate from Supabase Realtime.
 do $$
 begin
-  if exists (select 1 from pg_publication where pubname = 'powersync') then
-    alter publication powersync add table public.households, public.household_members,
-      public.shopping_lists, public.shopping_items;
-  elsif exists (select 1 from pg_publication where pubname = 'supabase_realtime') then
-    alter publication supabase_realtime add table public.households, public.household_members,
-      public.shopping_lists, public.shopping_items;
+  if not exists (select 1 from pg_publication where pubname = 'powersync') then
+    execute 'create publication powersync for table public.households, public.household_members, public.shopping_lists, public.shopping_items';
+  else
+    if not exists (select 1 from pg_publication_tables where pubname = 'powersync' and schemaname = 'public' and tablename = 'households') then
+      execute 'alter publication powersync add table public.households';
+    end if;
+    if not exists (select 1 from pg_publication_tables where pubname = 'powersync' and schemaname = 'public' and tablename = 'household_members') then
+      execute 'alter publication powersync add table public.household_members';
+    end if;
+    if not exists (select 1 from pg_publication_tables where pubname = 'powersync' and schemaname = 'public' and tablename = 'shopping_lists') then
+      execute 'alter publication powersync add table public.shopping_lists';
+    end if;
+    if not exists (select 1 from pg_publication_tables where pubname = 'powersync' and schemaname = 'public' and tablename = 'shopping_items') then
+      execute 'alter publication powersync add table public.shopping_items';
+    end if;
   end if;
-exception when duplicate_object then null;
 end $$;

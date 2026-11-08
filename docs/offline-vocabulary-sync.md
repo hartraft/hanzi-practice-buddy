@@ -62,3 +62,20 @@ New cloud-owned lists stay in the authenticated PowerSync tables and are exclude
 - [x] Local SQLite storage and device-local list persistence.
 - [x] Auth, PowerSync connector and user-filtered sync queries.
 - [ ] Live Supabase/PowerSync configuration, two-account RLS tests, and Android offline/restart validation.
+
+
+## Google account linking (first slice)
+
+The signed-in account can link Google through Supabase Auth's `linkIdentity({ provider: 'google' })` flow. This is intentionally **not** Google sign-in: the user first signs in with their existing email/password account, then links Google to that same Supabase user ID. This preserves the owner IDs on vocabulary rows and avoids silently creating or merging a second account. Existing email/password authentication remains available.
+
+Before enabling the button:
+
+1. In Supabase Dashboard → Authentication → Providers, enable Google and configure its OAuth client ID/secret.
+2. Add the Supabase callback URL shown by the Google provider configuration to the Google OAuth client's authorised redirect URIs.
+3. Add the app callback `com.hartraft.hanzipracticebuddy://auth/callback` to Supabase's allowed redirect URLs.
+4. For web/PWA, also allow the deployed app origin/path used as the OAuth return URL.
+5. Rebuild the Android app after the deep-link intent filter change.
+
+The Android app returns through the registered custom scheme and exchanges the PKCE authorization code in the existing Supabase client. Only the public Supabase URL and publishable key belong in the client. Never add the Google client secret or Supabase service-role key to app configuration.
+
+This first slice only links the identity and confirms its linked state. It does **not** synchronise practice progress: streaks, practiced-character sets, current deck/position and preferences remain local in `hanziPracticeBuddy` until the separate progress-sync slice defines and tests per-user storage, offline queueing and deterministic first-login merging. Do not treat a successful Google link as evidence that progress is backed up.

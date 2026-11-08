@@ -31,6 +31,23 @@ using (private.is_household_member(household_id)) with check (private.is_househo
 drop policy if exists "household members can delete lists" on public.shopping_lists;
 create policy "household members can delete lists" on public.shopping_lists for delete to authenticated
 using (private.is_household_member(household_id));
+
+drop policy if exists "household members can read shopping items" on public.shopping_items;
+create policy "household members can read shopping items" on public.shopping_items for select to authenticated
+using (exists (select 1 from public.shopping_lists sl where sl.id = shopping_items.list_id
+  and private.is_household_member(sl.household_id)));
+drop policy if exists "household members can add shopping items" on public.shopping_items;
+create policy "household members can add shopping items" on public.shopping_items for insert to authenticated
+with check (created_by = (select auth.uid()) and exists (
+  select 1 from public.shopping_lists sl where sl.id = shopping_items.list_id and private.is_household_member(sl.household_id)));
+drop policy if exists "household members can update shopping items" on public.shopping_items;
+create policy "household members can update shopping items" on public.shopping_items for update to authenticated
+using (exists (select 1 from public.shopping_lists sl where sl.id = shopping_items.list_id and private.is_household_member(sl.household_id)))
+with check (exists (select 1 from public.shopping_lists sl where sl.id = shopping_items.list_id and private.is_household_member(sl.household_id)));
+drop policy if exists "household members can delete shopping items" on public.shopping_items;
+create policy "household members can delete shopping items" on public.shopping_items for delete to authenticated
+using (exists (select 1 from public.shopping_lists sl where sl.id = shopping_items.list_id and private.is_household_member(sl.household_id)));
+
 drop policy if exists "household members and invitees can read invitations" on public.household_invitations;
 create policy "household members and invitees can read invitations" on public.household_invitations for select to authenticated
 using (private.is_household_member(household_id) or lower(invitee_email) = lower(coalesce((select auth.jwt() ->> 'email'), '')));

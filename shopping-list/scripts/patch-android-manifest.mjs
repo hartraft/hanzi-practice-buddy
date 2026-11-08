@@ -15,4 +15,10 @@ if (!manifest.includes('android:scheme="hartraft-shopping"')) {
   manifest = manifest.slice(0, activityClose) + filter + manifest.slice(activityClose);
   writeFileSync(manifestPath, manifest);
 }
-console.log('Configured OAuth deep link: hartraft-shopping://auth/callback');
+const wrapperPath = 'android/gradle/wrapper/gradle-wrapper.properties';
+let wrapper = readFileSync(wrapperPath, 'utf8');
+if (!/^networkTimeout=/m.test(wrapper)) {
+  wrapper = wrapper.trimEnd() + '\\nnetworkTimeout=180000\\n';
+  writeFileSync(wrapperPath, wrapper);
+}
+console.log('Configured OAuth deep link and resilient Gradle download timeout.');

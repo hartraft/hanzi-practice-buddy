@@ -78,7 +78,9 @@ async function initializePowerSync() {
   if (!powerSyncUrl) throw new Error('PowerSync URL is not configured.');
   powerSync = new PowerSyncDatabase({ schema: AppSchema, database: { dbFilename: 'household-shopping.sqlite' } });
   // Connect in the background: local SQLite remains usable while the device is offline.
-  powerSync.connect(new SupabasePowerSyncConnector(supabase, powerSyncUrl));
+  powerSync.connect(new SupabasePowerSyncConnector(supabase, powerSyncUrl)).catch((error) => {
+    console.warn('PowerSync is not connected yet; local SQLite remains available.', error);
+  });
 }
 function renderCreateHousehold() {
   renderShell(`<section class="auth-screen"><div class="brand-mark">✓</div><p class="eyebrow">WELCOME</p><h1>Start your<br>household list.</h1><p class="muted">Create a shared space, then invite your partner using their Google account email.</p><button class="primary-button" id="create-household">Create household</button><button class="text-button" id="sign-out">Sign out</button></section>`);

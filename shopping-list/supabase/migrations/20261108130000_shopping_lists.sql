@@ -69,38 +69,47 @@ drop trigger if exists households_add_creator on public.households;
 create trigger households_add_creator after insert on public.households
 for each row execute function public.add_household_creator();
 
+-- Replace the invitation RPC with SECURITY INVOKER. The row policies and
+-- column-level grants constrain exactly which invitation can be accepted.
 create or replace function public.accept_household_invitation(invitation_uuid uuid)
-returns uuid language plpgsql security definer set search_path = ''
+returns uuid
+language plpgsql
+security invoker
+set search_path = ''
 as $$
 declare
   current_user_id uuid := (select auth.uid());
   current_email text := lower(coalesce((select auth.jwt() ->> 'email'), ''));
   target_household uuid;
-  member_name text;
+  member_name text := coalesce(
+    nullif((select auth.jwt() -> 'user_metadata' ->> 'full_name'), ''),
+    nullif((select auth.jwt() -> 'user_metadata' ->> 'name'), ''),
+    'Household member'
+  );
 begin
   if current_user_id is null or current_email = '' then
     raise exception 'A signed-in account with an email address is required';
   end if;
-  select hi.household_id into target_household from public.household_invitations hi
-  where hi.id = invitation_uuid and lower(hi.invitee_email) = current_email
-    and hi.accepted_at is null and hi.expires_at > now()
-  for update;
+
+  update public.household_invitations
+  set accepted_by = current_user_id, accepted_at = now()
+  where id = invitation_uuid
+    and lower(invitee_email) = current_email
+    and accepted_at is null
+    and expires_at > now()
+  returning household_id into target_household;
+
   if target_household is null then
     raise exception 'Invitation not found, expired, or addressed to another account';
   end if;
-  select coalesce(nullif(u.raw_user_meta_data ->> 'full_name', ''),
-    nullif(u.raw_user_meta_data ->> 'name', ''), nullif(u.email, ''), 'Household member')
-  into member_name from auth.users u where u.id = current_user_id;
+
   insert into public.household_members (household_id, user_id, display_name)
-  values (target_household, current_user_id, coalesce(member_name, 'Household member'))
+  values (target_household, current_user_id, member_name)
   on conflict (household_id, user_id) do nothing;
-  update public.household_invitations set accepted_by = current_user_id, accepted_at = now()
-  where id = invitation_uuid;
+
   return target_household;
 end;
 $$;
-revoke all on function public.accept_household_invitation(uuid) from public, anon;
-grant execute on function public.accept_household_invitation(uuid) to authenticated;
 
 alter table public.households enable row level security;
 alter table public.household_members enable row level security;
@@ -146,11 +155,26 @@ drop policy if exists "household members can create invitations" on public.house
 create policy "household members can create invitations" on public.household_invitations for insert to authenticated
 with check (invited_by = (select auth.uid()) and accepted_at is null and private.is_household_member(household_id));
 
+drop policy if exists "invitees can accept their own invitation" on public.household_invitations;
+create policy "invitees can accept their own invitation" on public.household_invitations for update to authenticated
+using (lower(invitee_email) = lower(coalesce((select auth.jwt() ->> 'email'), '')) and accepted_at is null and expires_at > now())
+with check (lower(invitee_email) = lower(coalesce((select auth.jwt() ->> 'email'), '')) and accepted_by = (select auth.uid()) and accepted_at is not null);
+
+drop policy if exists "invited users can join their household" on public.household_members;
+create policy "invited users can join their household" on public.household_members for insert to authenticated
+with check (user_id = (select auth.uid()) and exists (
+  select 1 from public.household_invitations hi where hi.household_id = household_members.household_id
+  and lower(hi.invitee_email) = lower(coalesce((select auth.jwt() ->> 'email'), ''))
+  and hi.accepted_by = (select auth.uid()) and hi.accepted_at is not null
+));
+
 grant select, insert, update, delete on public.households to authenticated;
 grant select on public.household_members to authenticated;
 grant select, insert, update, delete on public.shopping_lists to authenticated;
 grant select, insert, update, delete on public.shopping_items to authenticated;
 grant select, insert on public.household_invitations to authenticated;
+grant insert on public.household_members to authenticated;
+grant update (accepted_by, accepted_at) on public.household_invitations to authenticated;
 grant all on public.households, public.household_members, public.shopping_lists, public.shopping_items, public.household_invitations to service_role;
 
 -- Keep the PowerSync publication separate from Supabase Realtime.

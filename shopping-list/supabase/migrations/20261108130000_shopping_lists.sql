@@ -109,42 +109,42 @@ alter table public.shopping_items enable row level security;
 alter table public.household_invitations enable row level security;
 
 drop policy if exists "household members can read households" on public.households;
-create policy "household members can read households" on public.households for select to authenticated using (public.is_household_member(id));
+create policy "household members can read households" on public.households for select to authenticated using (private.is_household_member(id));
 drop policy if exists "users can create their own household" on public.households;
 create policy "users can create their own household" on public.households for insert to authenticated with check (created_by = (select auth.uid()));
 
 drop policy if exists "household members can read membership" on public.household_members;
-create policy "household members can read membership" on public.household_members for select to authenticated using (public.is_household_member(household_id));
+create policy "household members can read membership" on public.household_members for select to authenticated using (private.is_household_member(household_id));
 
 drop policy if exists "household members can read lists" on public.shopping_lists;
-create policy "household members can read lists" on public.shopping_lists for select to authenticated using (public.is_household_member(household_id));
+create policy "household members can read lists" on public.shopping_lists for select to authenticated using (private.is_household_member(household_id));
 drop policy if exists "household members can create lists" on public.shopping_lists;
-create policy "household members can create lists" on public.shopping_lists for insert to authenticated with check (created_by = (select auth.uid()) and public.is_household_member(household_id));
+create policy "household members can create lists" on public.shopping_lists for insert to authenticated with check (created_by = (select auth.uid()) and private.is_household_member(household_id));
 drop policy if exists "household members can update lists" on public.shopping_lists;
-create policy "household members can update lists" on public.shopping_lists for update to authenticated using (public.is_household_member(household_id)) with check (public.is_household_member(household_id));
+create policy "household members can update lists" on public.shopping_lists for update to authenticated using (private.is_household_member(household_id)) with check (private.is_household_member(household_id));
 drop policy if exists "household members can delete lists" on public.shopping_lists;
-create policy "household members can delete lists" on public.shopping_lists for delete to authenticated using (public.is_household_member(household_id));
+create policy "household members can delete lists" on public.shopping_lists for delete to authenticated using (private.is_household_member(household_id));
 
 drop policy if exists "household members can read shopping items" on public.shopping_items;
 create policy "household members can read shopping items" on public.shopping_items for select to authenticated
-using (exists (select 1 from public.shopping_lists sl where sl.id = shopping_items.list_id and public.is_household_member(sl.household_id)));
+using (exists (select 1 from public.shopping_lists sl where sl.id = shopping_items.list_id and private.is_household_member(sl.household_id)));
 drop policy if exists "household members can add shopping items" on public.shopping_items;
 create policy "household members can add shopping items" on public.shopping_items for insert to authenticated
-with check (created_by = (select auth.uid()) and exists (select 1 from public.shopping_lists sl where sl.id = shopping_items.list_id and public.is_household_member(sl.household_id)));
+with check (created_by = (select auth.uid()) and exists (select 1 from public.shopping_lists sl where sl.id = shopping_items.list_id and private.is_household_member(sl.household_id)));
 drop policy if exists "household members can update shopping items" on public.shopping_items;
 create policy "household members can update shopping items" on public.shopping_items for update to authenticated
-using (exists (select 1 from public.shopping_lists sl where sl.id = shopping_items.list_id and public.is_household_member(sl.household_id)))
-with check (exists (select 1 from public.shopping_lists sl where sl.id = shopping_items.list_id and public.is_household_member(sl.household_id)));
+using (exists (select 1 from public.shopping_lists sl where sl.id = shopping_items.list_id and private.is_household_member(sl.household_id)))
+with check (exists (select 1 from public.shopping_lists sl where sl.id = shopping_items.list_id and private.is_household_member(sl.household_id)));
 drop policy if exists "household members can delete shopping items" on public.shopping_items;
 create policy "household members can delete shopping items" on public.shopping_items for delete to authenticated
-using (exists (select 1 from public.shopping_lists sl where sl.id = shopping_items.list_id and public.is_household_member(sl.household_id)));
+using (exists (select 1 from public.shopping_lists sl where sl.id = shopping_items.list_id and private.is_household_member(sl.household_id)));
 
 drop policy if exists "household members and invitees can read invitations" on public.household_invitations;
 create policy "household members and invitees can read invitations" on public.household_invitations for select to authenticated
-using (public.is_household_member(household_id) or lower(invitee_email) = lower(coalesce((select auth.jwt() ->> 'email'), '')));
+using (private.is_household_member(household_id) or lower(invitee_email) = lower(coalesce((select auth.jwt() ->> 'email'), '')));
 drop policy if exists "household members can create invitations" on public.household_invitations;
 create policy "household members can create invitations" on public.household_invitations for insert to authenticated
-with check (invited_by = (select auth.uid()) and accepted_at is null and public.is_household_member(household_id));
+with check (invited_by = (select auth.uid()) and accepted_at is null and private.is_household_member(household_id));
 
 grant select, insert, update, delete on public.households to authenticated;
 grant select on public.household_members to authenticated;

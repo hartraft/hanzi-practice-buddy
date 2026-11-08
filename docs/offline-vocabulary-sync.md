@@ -19,6 +19,8 @@ PowerSync's Capacitor SDK is currently beta and requires Capacitor 8+, `@capacit
 4. Follow the [official Supabase + PowerSync setup guide](https://docs.powersync.com/integrations/supabase/guide) to configure the Postgres replication role/publication and create a PowerSync service connected to the database. Use `powersync/service.example.yaml` as the non-secret configuration template and `powersync/sync-config.yaml` for the **Sync Streams** config. The stream queries use `auth.user_id()` so clients only receive records owned by the authenticated Supabase user. Validate and deploy the streams in the PowerSync dashboard. Do not replace them with a global stream.
 5. Configure the client with the Supabase project URL, Supabase publishable key, and PowerSync endpoint. These values may be public client configuration; never include a Supabase service-role key, database password, or privileged sync credential in app assets.
 
+For local development, copy `.env.example` to `.env.local` and set `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`, and `VITE_POWERSYNC_URL`. For GitHub Actions APK and release builds, add these same three values as **repository Actions variables** under Settings → Secrets and variables → Actions → Variables (not Secrets; they are public client settings embedded in the app). Also add `VITE_COURSE_API_BASE_URL` only if a default course-app API URL is wanted. The build and release workflows pass these variables to Vite. If any required variable is absent, the app intentionally builds in local-only mode rather than failing.
+
 End-to-end syncing cannot be enabled until the Supabase and PowerSync services are configured and the client integration is committed. Do not put real project credentials into source control; use a local ignored config file or build-time environment variables.
 
 ## Shared course-app vocabulary source
@@ -62,3 +64,20 @@ New cloud-owned lists stay in the authenticated PowerSync tables and are exclude
 - [x] Local SQLite storage and device-local list persistence.
 - [x] Auth, PowerSync connector and user-filtered sync queries.
 - [ ] Live Supabase/PowerSync configuration, two-account RLS tests, and Android offline/restart validation.
+
+
+## Google account linking (first slice)
+
+The signed-in account can link Google through Supabase Auth's `linkIdentity({ provider: 'google' })` flow. This is intentionally **not** Google sign-in: the user first signs in with their existing email/password account, then links Google to that same Supabase user ID. This preserves the owner IDs on vocabulary rows and avoids silently creating or merging a second account. Existing email/password authentication remains available.
+
+Before enabling the button:
+
+1. In Supabase Dashboard → Authentication → Providers, enable Google and configure its OAuth client ID/secret.
+2. Add the Supabase callback URL shown by the Google provider configuration to the Google OAuth client's authorised redirect URIs.
+3. Add the app callback `com.hartraft.hanzipracticebuddy://auth/callback` to Supabase's allowed redirect URLs.
+4. For web/PWA, also allow the deployed app origin/path used as the OAuth return URL.
+5. Rebuild the Android app after the deep-link intent filter change.
+
+The Android app returns through the registered custom scheme and exchanges the PKCE authorization code in the existing Supabase client. Only the public Supabase URL and publishable key belong in the client. Never add the Google client secret or Supabase service-role key to app configuration.
+
+This first slice only links the identity and confirms its linked state. It does **not** synchronise practice progress: streaks, practiced-character sets, current deck/position and preferences remain local in `hanziPracticeBuddy` until the separate progress-sync slice defines and tests per-user storage, offline queueing and deterministic first-login merging. Do not treat a successful Google link as evidence that progress is backed up.

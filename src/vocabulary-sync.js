@@ -1,4 +1,5 @@
 import { Capacitor } from '@capacitor/core';
+import { App } from '@capacitor/app';
 import { PowerSyncDatabase as CapacitorPowerSyncDatabase } from '@powersync/capacitor';
 import { column, PowerSyncDatabase as WebPowerSyncDatabase, Schema, Table } from '@powersync/web';
 import { createClient } from '@supabase/supabase-js';
@@ -138,8 +139,16 @@ export async function initVocabularySync(options = {}) {
   }
 
   supabase = createClient(config.supabaseUrl, config.supabaseKey, {
-    auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
+    auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, flowType: 'pkce' }
   });
+  if (Capacitor.isNativePlatform()) {
+    App.addListener('appUrlOpen', ({ url }) => {
+      handleNativeAuthCallback(url).catch(error => setStatus('error', error.message || String(error)));
+    });
+    const launch = await App.getLaunchUrl();
+    if (launch?.url) await handleNativeAuthCallback(launch.url);
+  }
+
   const { data, error } = await supabase.auth.getSession();
   if (error) {
     setStatus('error', error.message);
@@ -324,6 +333,46 @@ export async function signUp(email, password) {
   if (error) throw error;
   const legacyCacheCleared = data.session ? (await handleSession(data.session) || needsLegacyReset) : false;
   return { user: data.user, legacyCacheCleared };
+}
+
+export async function linkGoogleIdentity() {
+  if (!supabase) throw new Error('Cloud sync is not configured. See docs/offline-vocabulary-sync.md.');
+  const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+  if (sessionError) throw sessionError;
+  if (!sessionData.session) throw new Error('Sign in before linking a Google account.');
+  const redirectTo = Capacitor.isNativePlatform()
+    ? 'com.hartraft.hanzipracticebuddy://auth/callback'
+    : `${window.location.origin}${window.location.pathname}`;
+  const { data, error } = await supabase.auth.linkIdentity({
+    provider: 'google',
+    options: { redirectTo }
+  });
+  if (error) throw error;
+  return data;
+}
+
+async function handleNativeAuthCallback(url) {
+  if (!supabase || !url) return;
+  let callback;
+  try { callback = new URL(url); } catch { return; }
+  const errorDescription = callback.searchParams.get('error_description');
+  if (errorDescription) {
+    setStatus('error', `Google linking was not completed: ${errorDescription}`);
+    return;
+  }
+  const code = callback.searchParams.get('code');
+  if (!code) return;
+  const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+  if (error) {
+    setStatus('error', `Could not complete Google linking: ${error.message}`);
+    return;
+  }
+  if (data.session) await handleSession(data.session);
+}
+
+export async function googleIdentityLinked() {
+  const user = await currentSyncUser();
+  return Boolean(user?.identities?.some(identity => identity.provider === 'google'));
 }
 
 export async function signOut() {

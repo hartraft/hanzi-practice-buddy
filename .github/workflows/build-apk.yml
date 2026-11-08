@@ -45,6 +45,11 @@ jobs:
       - name: Audit runtime dependencies
         run: npm audit --omit=dev --audit-level=high
       - name: Build web assets and sync
+        env:
+          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ vars.VITE_SUPABASE_PUBLISHABLE_KEY }}
+          VITE_POWERSYNC_URL: ${{ vars.VITE_POWERSYNC_URL }}
+          VITE_COURSE_API_BASE_URL: ${{ vars.VITE_COURSE_API_BASE_URL }}
         run: npm run build
       - name: Set up JDK 21
         uses: actions/setup-java@v4

@@ -139,7 +139,7 @@ export async function initVocabularySync(options = {}) {
   }
 
   supabase = createClient(config.supabaseUrl, config.supabaseKey, {
-    auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
+    auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, flowType: 'pkce' }
   });
   if (Capacitor.isNativePlatform()) {
     App.addListener('appUrlOpen', ({ url }) => {

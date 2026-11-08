@@ -1,4 +1,4 @@
-import { initVocabularySync, signIn, signUp, signOut, currentSyncUser, persistCustomLists, persistLocalCustomLists, mergeLocalLists, syncConfiguration } from './vocabulary-sync.js';
+import { initVocabularySync, signIn, signUp, signOut, currentSyncUser, linkGoogleIdentity, googleIdentityLinked, persistCustomLists, persistLocalCustomLists, mergeLocalLists, syncConfiguration } from './vocabulary-sync.js';
 import { normalizeCustomLists, deviceLocalLists } from './vocabulary-model.js';
 import { fetchCourseVocabulary, getCourseApiBaseUrl, saveCourseApiBaseUrl } from './course-vocabulary.js';
 
@@ -717,6 +717,7 @@ function setSyncControlsSignedIn(signedIn) {
   document.getElementById('syncSignInBtn').hidden = signedIn;
   document.getElementById('syncSignUpBtn').hidden = signedIn;
   document.getElementById('syncSignOutBtn').hidden = !signedIn;
+  document.getElementById('syncGoogleLinkBtn').hidden = !signedIn;
   document.getElementById('syncPassword').autocomplete = signedIn ? 'off' : 'current-password';
 }
 
@@ -763,10 +764,39 @@ document.getElementById('syncSignUpBtn').addEventListener('click', async () => {
   }
 });
 
+document.getElementById('syncGoogleLinkBtn').addEventListener('click', async () => {
+  try {
+    const linked = await googleIdentityLinked();
+    if (linked) {
+      setSyncStatus('synced', 'A Google account is already linked to this account.');
+      return;
+    }
+    setSyncStatus('syncing', 'Opening Google to link it to your existing account…');
+    await linkGoogleIdentity();
+  } catch (error) {
+    setSyncStatus('error', error.message || String(error));
+  }
+});
+
+async function refreshGoogleLinkControl() {
+  const button = document.getElementById('syncGoogleLinkBtn');
+  try {
+    const linked = await googleIdentityLinked();
+    button.disabled = linked;
+    button.textContent = linked ? 'Google account linked' : 'Link Google account';
+    button.title = linked ? 'Google is already linked to this account.' : 'Link Google to the currently signed-in account.';
+  } catch (error) {
+    button.disabled = true;
+    button.title = error.message || String(error);
+  }
+}
+
 document.getElementById('syncSignOutBtn').addEventListener('click', async () => {
   try {
     await signOut();
     setSyncControlsSignedIn(false);
+    document.getElementById('syncGoogleLinkBtn').disabled = false;
+    document.getElementById('syncGoogleLinkBtn').textContent = 'Link Google account';
     setSyncStatus('signed-out', 'Local lists remain on this device.');
   } catch (error) {
     setSyncStatus('error', error.message || String(error));
@@ -799,6 +829,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       onStatusChanged: ({ status, detail, signedIn, userId }) => {
         setSyncStatus(status, detail);
         setSyncControlsSignedIn(Boolean(signedIn));
+        if (signedIn) refreshGoogleLinkControl();
         const nextUserId = signedIn ? userId : null;
         if ((activeSyncUserId && nextUserId && activeSyncUserId !== nextUserId) || !signedIn) {
           // Drop the previous account's in-memory cloud snapshot on sign-out or
@@ -837,6 +868,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       renderDeckSelect();
       await persistCustomLists(customLists);
       setSyncControlsSignedIn(true);
+      await refreshGoogleLinkControl();
     }
   } catch (error) {
     setSyncStatus('error', error.message || String(error));

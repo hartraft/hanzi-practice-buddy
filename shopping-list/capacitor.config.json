@@ -1,0 +1,6 @@
+{
+  "appId": "com.hartraft.shoppinglist",
+  "appName": "Our Shopping List",
+  "webDir": "dist",
+  "bundledWebRuntime": false
+}

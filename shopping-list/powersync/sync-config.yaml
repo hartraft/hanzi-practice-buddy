@@ -1,0 +1,11 @@
+config:
+  edition: 3
+
+streams:
+  household_data:
+    auto_subscribe: true
+    queries:
+      - SELECT households.* FROM households INNER JOIN household_members ON household_members.household_id = households.id WHERE household_members.user_id = auth.user_id()
+      - SELECT household_members.* FROM household_members WHERE household_members.household_id IN (SELECT household_id FROM household_members WHERE user_id = auth.user_id())
+      - SELECT shopping_lists.* FROM shopping_lists INNER JOIN household_members ON household_members.household_id = shopping_lists.household_id WHERE household_members.user_id = auth.user_id()
+      - SELECT shopping_items.* FROM shopping_items INNER JOIN shopping_lists ON shopping_lists.id = shopping_items.list_id INNER JOIN household_members ON household_members.household_id = shopping_lists.household_id WHERE household_members.user_id = auth.user_id()

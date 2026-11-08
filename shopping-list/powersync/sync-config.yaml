@@ -2,6 +2,14 @@ config:
   edition: 3
 
 streams:
+  # Preserve Hanzi Practice Buddy's existing user-owned vocabulary sync.
+  user_vocab:
+    auto_subscribe: true
+    queries:
+      - SELECT * FROM vocabulary_lists WHERE user_id = auth.user_id()
+      - SELECT vocabulary_items.* FROM vocabulary_items INNER JOIN vocabulary_lists ON vocabulary_items.list_id = vocabulary_lists.id WHERE vocabulary_lists.user_id = auth.user_id()
+
+  # Household-scoped shopping data: both members receive the same live rows.
   household_data:
     auto_subscribe: true
     queries:

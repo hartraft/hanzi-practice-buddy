@@ -35,7 +35,7 @@ pytest -o pythonpath=.
 
 - **Hanzi Writer Integration**: Interactive stroke-by-stroke quiz with grading.
 - **Separate Controls**:
-  - Toggle to **Hide Character Prompt** (and Pinyin).
+  - Toggle to **Hide Character Prompt** (Pinyin stays visible so you know what to write).
   - Toggle to **Hide Outline / Shadow**.
   - **No-Hint Mode** for advanced practice.
   - **Stroke-Order Replay** button to animate character strokes.

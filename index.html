@@ -446,20 +446,20 @@ function showChar(){
 
   updateStreak(); todaySet.add(char); allCharsSet.add(char);
 
+  // Pinyin always stays visible so the learner knows what to write when the prompt is hidden
+  try{
+    const pyNum = pinyinPro.pinyin(char,{toneType:'num'});
+    const tone = parseInt(pyNum.match(/[1-5]/)?.[0] || 5);
+    els.char.style.color = toneColors[tone];
+    els.pinyin.textContent = pinyinPro.pinyin(char,{toneType:'symbol'});
+  }catch(e){ els.pinyin.textContent=''; }
+
+  const info = charInfoMap[char];
   if(prefs.hidePrompt){
     els.char.textContent = '';
-    els.pinyin.textContent = '';
-    els.vocabInfo.textContent = '';
+    els.vocabInfo.innerHTML = info ? `<b>Word Pinyin:</b> ${escapeHtml(info.pinyin)}` : '';
   } else {
     els.char.textContent = char;
-    try{
-      const pyNum = pinyinPro.pinyin(char,{toneType:'num'});
-      const tone = parseInt(pyNum.match(/[1-5]/)?.[0] || 5);
-      els.char.style.color = toneColors[tone];
-      els.pinyin.textContent = pinyinPro.pinyin(char,{toneType:'symbol'});
-    }catch(e){ els.pinyin.textContent=''; }
-
-    const info = charInfoMap[char];
     if(info){
       els.vocabInfo.innerHTML = `<b>Word:</b> ${escapeHtml(info.vocabulary)} | <b>Pinyin:</b> ${escapeHtml(info.pinyin)}<br><b>Context:</b> ${escapeHtml(info.context || 'N/A')} | <b>POS:</b> ${escapeHtml(info.pos || 'N/A')}`;
     } else {

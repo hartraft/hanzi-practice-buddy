@@ -369,9 +369,21 @@ function isHanzi(c){
   return false;
 }
 
+// Extract unique Chinese words from free text; any non-Hanzi characters
+// (punctuation like "/", ",", ".", Latin letters, digits, spaces) act as separators.
+function parseWords(text){
+  const out = [];
+  let cur = '';
+  for(const c of String(text || '')){
+    if(isHanzi(c)){ cur += c; }
+    else if(cur){ out.push(cur); cur = ''; }
+  }
+  if(cur) out.push(cur);
+  return [...new Set(out)];
+}
+
 function loadWords(){
-  let input = els.wordList.value.split('\n').map(w=>w.trim()).filter(Boolean);
-  input = [...new Set(input)]; // remove duplicate words
+  const input = parseWords(els.wordList.value);
   els.wordList.value = input.join('\n');
   if(!input.length){ alert('Enter at least one word'); return; }
 
@@ -381,7 +393,7 @@ function loadWords(){
 
   // Build unique character list
   const charSet = new Set();
-  words.forEach(w => w.split('').forEach(c => charSet.add(c)));
+  words.forEach(w => Array.from(w).forEach(c => { if(isHanzi(c)) charSet.add(c); }));
   uniqueChars = Array.from(charSet);
 
   charIndex = 0;
@@ -426,7 +438,7 @@ function loadFromURL(){
     }
   }
   if(p.has('words')){
-    const list = [...new Set(p.get('words').split(/[ ,\n]+/).filter(Boolean))];
+    const list = parseWords(p.get('words'));
     if(list.length){
       els.wordList.value = list.join('\n');
       loadWords();
@@ -549,7 +561,7 @@ function updateStatsText(){
 
 // ===== CUSTOM LIST MANAGEMENT =====
 function saveCurrentList(){
-  let input = els.wordList.value.split('\n').map(w=>w.trim()).filter(Boolean);
+  const input = parseWords(els.wordList.value);
   if(!input.length){ alert('Enter at least one word'); return; }
 
   let name = '';
@@ -575,10 +587,10 @@ function saveCurrentList(){
 
   let existing = customLists.find(l => l.name === name);
   if(existing){
-    existing.words = [...new Set(input)];
+    existing.words = input;
     existing.updatedAt = Date.now();
   } else {
-    customLists.push({ name, words: [...new Set(input)], updatedAt: Date.now() });
+    customLists.push({ name, words: input, updatedAt: Date.now() });
   }
   saveCustomLists();
   activeCustomListId = name;
@@ -647,7 +659,7 @@ function importWords(){
         // Restore exported contents even when a same-named list already exists locally.
         if(deck.startsWith(CUSTOM_LIST_PREFIX)){
           const name = customListName(deck);
-          const input = [...new Set((data.words || []).map(String).filter(Boolean))];
+          const input = parseWords((data.words || []).map(String).join('\n'));
           if(!input.length){ alert('File contains no words'); return; }
           if(customLists.length >= MAX_CUSTOM_LISTS && !customLists.some(l => l.name === name)){
             alert(`You can save at most ${MAX_CUSTOM_LISTS} lists. Delete one first.`); return;
@@ -663,10 +675,10 @@ function importWords(){
         els.deckSelect.value = deck;
         if(deck === 'custom'){
           els.customContainer.style.display = 'block';
-          words = [...new Set(data.words || [])];
+          words = parseWords((data.words || []).map(String).join('\n'));
           els.wordList.value = words.join('\n');
           const charSet = new Set();
-          words.forEach(w => w.split('').forEach(c => charSet.add(c)));
+          words.forEach(w => Array.from(w).forEach(c => { if(isHanzi(c)) charSet.add(c); }));
           uniqueChars = Array.from(charSet);
           charIndex = 0;
           uniqueChars.forEach(c => allCharsSet.add(c));

@@ -475,7 +475,8 @@ function showChar(){
     height: 300,
     showOutline: !prefs.hideOutline,
     showCharacter: false,
-    leniency: prefs.noHint ? 0.6 : 0.8
+    // Keep grading forgiving; hint visibility must not change stroke tolerance.
+    leniency: 1.2
   };
 
   writer = HanziWriter.create('writer', char, options);

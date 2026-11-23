@@ -9,9 +9,9 @@
 <meta name="theme-color" content="#000000" />
 
 <script src="https://unpkg.com/hanzi-writer@2.3.0/dist/hanzi-writer.min.js"></script>
-<script src="https://unpkg.com/pinyin-pro/dist/index.js"></script>
-<script src="https://unpkg.com/opencc-js@1.0.5/dist/umd/full.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://unpkg.com/pinyin-pro@3.29.5/dist/index.js"></script>
+<script src="https://unpkg.com/opencc-js@1.4.2/dist/umd/full.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@4.2.1/dist/jspdf.umd.min.js"></script>
 
 <style>
 body { font-family: Arial, sans-serif; padding: 10px; text-align: center; background:#fff; color:#000; }
@@ -47,6 +47,8 @@ button { margin:5px; padding:8px 12px; font-size:15px; cursor:pointer; }
 }
 #completionMessage[hidden] { display: none; }
 .controls-group { margin: 10px 0; }
+#currentListName { font-size: 13px; margin-top: 4px; color: #555; }
+body.dark #currentListName { color: #aaa; }
 </style>
 </head>
 <body>
@@ -58,7 +60,6 @@ button { margin:5px; padding:8px 12px; font-size:15px; cursor:pointer; }
 <div class="controls-group">
   <label for="deckSelect"><b>Vocabulary Deck:</b></label>
   <select id="deckSelect">
-    <option value="custom">Custom List (Textarea)</option>
     <option value="novice_1">TOCFL Novice 1 (160 entries)</option>
     <option value="novice_2">TOCFL Novice 2 (234 entries)</option>
     <option value="both">TOCFL Novice 1 & 2 (394 entries)</option>
@@ -66,8 +67,12 @@ button { margin:5px; padding:8px 12px; font-size:15px; cursor:pointer; }
 </div>
 
 <div id="customContainer">
+  <div id="currentListName"></div>
   <textarea id="wordList" placeholder="Enter words, one per line"></textarea><br>
   <button id="loadBtn">Load Custom List</button>
+  <button id="saveListBtn" title="Save the words above as a named list, or update the currently selected saved list">Save List</button>
+  <button id="newListBtn" title="Start a new empty saved list">New List</button>
+  <button id="deleteListBtn" title="Delete the currently selected saved list">Delete List</button>
 </div>
 
 <div class="controls-group" style="font-size: 14px;">
@@ -104,6 +109,11 @@ button { margin:5px; padding:8px 12px; font-size:15px; cursor:pointer; }
 <script>
 const converter = OpenCC.Converter({ from:'cn', to:'tw' });
 const toneColors = {1:'#007AFF',2:'#34C759',3:'#FF9500',4:'#FF3B30',5:'#8E8E93'};
+const BUILTIN_DECK_LABELS = {
+  novice_1: 'TOCFL Novice 1 (160 entries)',
+  novice_2: 'TOCFL Novice 2 (234 entries)',
+  both: 'TOCFL Novice 1 & 2 (394 entries)'
+};
 
 let currentDeck = 'custom';
 let vocabEntries = [];
@@ -127,7 +137,74 @@ let prefs = {
   dark: false
 };
 
+// ===== CUSTOM LIST STORAGE =====
+const CUSTOM_LISTS_KEY = 'hanziPracticeBuddyCustomLists';
+const MAX_CUSTOM_LISTS = 20;
+const CUSTOM_LIST_PREFIX = 'custom:';
+
+let customLists = [];      // [{ name, words: [], updatedAt }]
+let activeCustomListId = null; // id of the saved custom list currently loaded, or null
 let deckRestored = false;
+
+function listKey(name){ return CUSTOM_LIST_PREFIX + name; }
+function customListName(key){ return key.startsWith(CUSTOM_LIST_PREFIX) ? key.slice(CUSTOM_LIST_PREFIX.length) : ''; }
+
+function saveCustomLists(){
+  try{
+    localStorage.setItem(CUSTOM_LISTS_KEY, JSON.stringify(customLists));
+  }catch(e){
+    alert('Could not save lists: browser storage is full.');
+  }
+}
+
+function loadCustomLists(){
+  const raw = localStorage.getItem(CUSTOM_LISTS_KEY);
+  if(!raw){ customLists = []; return; }
+  try{
+    const parsed = JSON.parse(raw);
+    customLists = Array.isArray(parsed)
+      ? parsed.filter(l => l && typeof l.name === 'string' && l.name && Array.isArray(l.words))
+      : [];
+  }catch(e){ customLists = []; }
+}
+
+function renderDeckSelect(){
+  const prevKey = els.deckSelect.value;
+  els.deckSelect.innerHTML = '';
+  customLists.forEach(l => {
+    const opt = document.createElement('option');
+    opt.value = listKey(l.name);
+    opt.textContent = `📝 ${l.name} (${l.words.length} words)`;
+    els.deckSelect.appendChild(opt);
+  });
+  const customOpt = document.createElement('option');
+  customOpt.value = 'custom';
+  customOpt.textContent = 'Custom List (Textarea)';
+  els.deckSelect.appendChild(customOpt);
+  ['novice_1','novice_2','both'].forEach(k => {
+    const opt = document.createElement('option');
+    opt.value = k;
+    opt.textContent = BUILTIN_DECK_LABELS[k];
+    els.deckSelect.appendChild(opt);
+  });
+  if([...els.deckSelect.options].some(o => o.value === prevKey)){
+    els.deckSelect.value = prevKey;
+  }
+}
+
+function isCustomListKey(key){
+  return key.startsWith(CUSTOM_LIST_PREFIX) && customLists.some(l => listKey(l.name) === key);
+}
+
+function showCurrentListName(){
+  if(!activeCustomListId){
+    els.currentListName.textContent = 'Unsaved custom list';
+    return;
+  }
+  const list = customLists.find(l => l.name === activeCustomListId);
+  const when = list && list.updatedAt ? new Date(list.updatedAt).toLocaleDateString() : '';
+  els.currentListName.textContent = `Saved list: ${activeCustomListId}${when ? ' (updated ' + when + ')' : ''}`;
+}
 
 const els = {
   wordList: document.getElementById('wordList'),
@@ -139,6 +216,7 @@ const els = {
   stats: document.getElementById('stats'),
   deckSelect: document.getElementById('deckSelect'),
   customContainer: document.getElementById('customContainer'),
+  currentListName: document.getElementById('currentListName'),
   progressIndicator: document.getElementById('progressIndicator'),
   hidePromptToggle: document.getElementById('hidePromptToggle'),
   hideOutlineToggle: document.getElementById('hideOutlineToggle'),
@@ -164,11 +242,18 @@ function saveProgress(){
 }
 
 function restoreProgress(){
+  loadCustomLists();
+  renderDeckSelect();
+
   const raw = localStorage.getItem('hanziPracticeBuddy');
   if(!raw) return;
   try{
     const d = JSON.parse(raw);
     currentDeck = d.currentDeck || 'custom';
+    if(currentDeck.startsWith(CUSTOM_LIST_PREFIX) && !isCustomListKey(currentDeck)){
+      // Saved list no longer exists in storage
+      currentDeck = 'custom';
+    }
     els.deckSelect.value = currentDeck;
     words = d.words || [];
     uniqueChars = d.uniqueChars || [];
@@ -190,9 +275,14 @@ function restoreProgress(){
     if(currentDeck === 'custom'){
       els.customContainer.style.display = 'block';
       els.wordList.value = words.join('\n');
+      showCurrentListName();
       if(uniqueChars.length > 0){
         showChar();
       }
+    } else if(isCustomListKey(currentDeck)){
+      els.customContainer.style.display = 'block';
+      deckRestored = true;
+      loadDeck(currentDeck);
     } else {
       els.customContainer.style.display = 'none';
       deckRestored = true;
@@ -206,12 +296,26 @@ function restoreProgress(){
 
 async function loadDeck(deckKey){
   currentDeck = deckKey;
+  if(isCustomListKey(deckKey)){
+    const list = customLists.find(l => listKey(l.name) === deckKey);
+    if(!list) return;
+    els.customContainer.style.display = 'block';
+    els.wordList.value = list.words.join('\n');
+    loadWords();
+    activeCustomListId = list.name;
+    showCurrentListName();
+    return;
+  }
   if(deckKey === 'custom'){
     els.customContainer.style.display = 'block';
+    activeCustomListId = null;
+    showCurrentListName();
     loadWords();
     return;
   }
   els.customContainer.style.display = 'none';
+  activeCustomListId = null;
+  showCurrentListName();
   try{
     const res = await fetch('data/vocabulary_novice.json');
     const data = await res.json();
@@ -272,6 +376,8 @@ function loadWords(){
   if(!input.length){ alert('Enter at least one word'); return; }
 
   words = input.map(w => converter(w));
+  activeCustomListId = null; // textarea contents are a fresh (unsaved) list
+  showCurrentListName();
 
   // Build unique character list
   const charSet = new Set();
@@ -291,7 +397,9 @@ function loadWords(){
 }
 
 function updateURL(){
-  if(currentDeck === 'custom'){
+  if(isCustomListKey(currentDeck)){
+    history.replaceState(null,'',`?list=${encodeURIComponent(customListName(currentDeck))}`);
+  } else if(currentDeck === 'custom'){
     const encoded = encodeURIComponent(words.join(' '));
     history.replaceState(null,'',`?words=${encoded}`);
   } else {
@@ -306,6 +414,14 @@ function loadFromURL(){
     if(['novice_1', 'novice_2', 'both'].includes(d)){
       els.deckSelect.value = d;
       loadDeck(d);
+      return;
+    }
+  }
+  if(p.has('list')){
+    const name = p.get('list');
+    if(isCustomListKey(listKey(name))){
+      els.deckSelect.value = listKey(name);
+      loadDeck(listKey(name));
       return;
     }
   }
@@ -431,6 +547,88 @@ function updateStatsText(){
   els.stats.textContent = `Daily streak: ${streak}\nToday practiced: ${[...todaySet].join(', ')}\nTotal characters learned: ${allCharsSet.size}`;
 }
 
+// ===== CUSTOM LIST MANAGEMENT =====
+function saveCurrentList(){
+  let input = els.wordList.value.split('\n').map(w=>w.trim()).filter(Boolean);
+  if(!input.length){ alert('Enter at least one word'); return; }
+
+  let name = '';
+  if(activeCustomListId){
+    name = activeCustomListId;
+    const overwrite = confirm(`Update saved list "${name}" with the current words?`);
+    if(!overwrite) return;
+  } else {
+    name = prompt('Name this word list:', 'My List');
+    if(name === null) return;
+    name = name.trim();
+    if(!name){ alert('List name cannot be empty.'); return; }
+    if(customLists.some(l => l.name === name)){
+      const overwrite = confirm(`A list named "${name}" already exists. Overwrite it?`);
+      if(!overwrite) return;
+    }
+  }
+
+  if(customLists.length >= MAX_CUSTOM_LISTS && !customLists.some(l => l.name === name)){
+    alert(`You can save at most ${MAX_CUSTOM_LISTS} lists. Delete one first.`);
+    return;
+  }
+
+  let existing = customLists.find(l => l.name === name);
+  if(existing){
+    existing.words = [...new Set(input)];
+    existing.updatedAt = Date.now();
+  } else {
+    customLists.push({ name, words: [...new Set(input)], updatedAt: Date.now() });
+  }
+  saveCustomLists();
+  activeCustomListId = name;
+  currentDeck = listKey(name);
+  renderDeckSelect();
+  els.deckSelect.value = currentDeck;
+  // Refresh practice state from the saved textarea contents as part of saving.
+  loadDeck(currentDeck);
+  showCurrentListName();
+  saveProgress();
+  updateURL();
+}
+
+function newCustomList(){
+  els.wordList.value = '';
+  els.deckSelect.value = 'custom';
+  currentDeck = 'custom';
+  activeCustomListId = null;
+  showCurrentListName();
+  words = []; uniqueChars = []; charInfoMap = {}; charIndex = 0;
+  els.char.textContent=''; els.pinyin.textContent=''; els.vocabInfo.textContent='';
+  els.progressIndicator.textContent = '';
+  els.writer.innerHTML=''; writer = null;
+  updateStatsText();
+  saveProgress();
+  updateURL();
+  els.wordList.focus();
+}
+
+function deleteCurrentList(){
+  if(!activeCustomListId){ alert('No saved list is currently selected.'); return; }
+  const name = activeCustomListId;
+  if(!confirm(`Delete saved list "${name}"?`)) return;
+  customLists = customLists.filter(l => l.name !== name);
+  saveCustomLists();
+  els.wordList.value = '';
+  currentDeck = 'custom';
+  activeCustomListId = null;
+  renderDeckSelect();
+  els.deckSelect.value = 'custom';
+  showCurrentListName();
+  words = []; uniqueChars = []; charInfoMap = {}; charIndex = 0;
+  els.char.textContent=''; els.pinyin.textContent=''; els.vocabInfo.textContent='';
+  els.progressIndicator.textContent = '';
+  els.writer.innerHTML=''; writer = null;
+  updateStatsText();
+  saveProgress();
+  updateURL();
+}
+
 // ===== IMPORT / EXPORT =====
 function exportWords(){
   const blob = new Blob([JSON.stringify({ words, currentDeck })],{type:'application/json'});
@@ -445,9 +643,25 @@ function importWords(){
     reader.onload = () => {
       try{
         const data = JSON.parse(reader.result);
-        currentDeck = data.currentDeck || 'custom';
-        els.deckSelect.value = currentDeck;
-        if(currentDeck === 'custom'){
+        let deck = data.currentDeck || 'custom';
+        // Restore exported contents even when a same-named list already exists locally.
+        if(deck.startsWith(CUSTOM_LIST_PREFIX)){
+          const name = customListName(deck);
+          const input = [...new Set((data.words || []).map(String).filter(Boolean))];
+          if(!input.length){ alert('File contains no words'); return; }
+          if(customLists.length >= MAX_CUSTOM_LISTS && !customLists.some(l => l.name === name)){
+            alert(`You can save at most ${MAX_CUSTOM_LISTS} lists. Delete one first.`); return;
+          }
+          let existing = customLists.find(l => l.name === name);
+          if(existing){ existing.words = input; existing.updatedAt = Date.now(); }
+          else { customLists.push({ name, words: input, updatedAt: Date.now() }); }
+          saveCustomLists();
+          renderDeckSelect();
+          loadDeck(listKey(name));
+          return;
+        }
+        els.deckSelect.value = deck;
+        if(deck === 'custom'){
           els.customContainer.style.display = 'block';
           words = [...new Set(data.words || [])];
           els.wordList.value = words.join('\n');
@@ -456,9 +670,11 @@ function importWords(){
           uniqueChars = Array.from(charSet);
           charIndex = 0;
           uniqueChars.forEach(c => allCharsSet.add(c));
+          activeCustomListId = null;
+          showCurrentListName();
           showChar(); saveProgress();
         } else {
-          loadDeck(currentDeck);
+          loadDeck(deck);
         }
       }catch(err){ alert('Invalid JSON file'); }
     };
@@ -499,6 +715,9 @@ function generatePDF(){
 // ===== EVENT LISTENERS =====
 els.deckSelect.onchange = (e) => loadDeck(e.target.value);
 document.getElementById('loadBtn').onclick = loadWords;
+document.getElementById('saveListBtn').onclick = saveCurrentList;
+document.getElementById('newListBtn').onclick = newCustomList;
+document.getElementById('deleteListBtn').onclick = deleteCurrentList;
 document.getElementById('nextBtn').onclick = nextChar;
 document.getElementById('prevBtn').onclick = prevChar;
 document.getElementById('replayBtn').onclick = replayStroke;

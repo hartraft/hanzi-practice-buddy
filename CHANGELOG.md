@@ -1,5 +1,13 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+- Service worker now precaches the app shell (page, manifest, icons, dataset) on install and caches all vendor CDN scripts (`unpkg.com`, `cdn.jsdelivr.net`) in addition to stroke data and `/data/`, so the app actually loads offline after the first visit; stale cache versions are removed on activate.
+
+### Added
+- `npm test` script that runs the pytest suite (used by `ralph.sh` and CI).
+
 ## [1.0.1.0] - 2026-10-17
 
 ### Added

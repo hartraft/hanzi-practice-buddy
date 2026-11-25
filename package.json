@@ -5,7 +5,8 @@
   "main": "index.html",
   "scripts": {
     "build:web": "mkdir -p www/data && cp index.html manifest.json sw.js icon-192.png icon-512.png www/ && cp data/vocabulary_novice.json www/data/",
-    "build": "npm run build:web && npx cap sync"
+    "build": "npm run build:web && npx cap sync",
+    "test": "python3 -m pytest -o pythonpath=."
   },
   "dependencies": {
     "@capacitor/android": "^5.7.0",

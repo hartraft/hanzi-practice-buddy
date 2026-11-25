@@ -72,5 +72,5 @@ The resulting debug APK will be located at `android/app/build/outputs/apk/debug/
 ## Offline Stroke-Data Availability
 
 - **Stroke Data**: Hanzi Writer fetches character stroke data from `jsdelivr.net` CDN on demand.
-- **Service Worker Caching**: The included service worker (`sw.js`) caches all CDN requests (`jsdelivr.net`) and local dataset files (`/data/`). Once loaded online once, characters and stroke data are fully available offline.
+- **Service Worker Caching**: The included service worker (`sw.js`) precaches the app shell (page, manifest, icons, dataset) on install and caches all vendor CDN scripts (`unpkg.com`, `cdn.jsdelivr.net`) plus local dataset files (`/data/`) on first use. Once loaded online once, the app itself and all stroke data are fully available offline.
 - **Internet Dependency**: Initial online connection is required to fetch CDN stroke data for characters not yet cached.

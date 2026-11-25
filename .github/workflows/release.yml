@@ -72,6 +72,18 @@ jobs:
         uses: android-actions/setup-android@v4
         with:
           packages: platform-tools platforms;android-33 build-tools;33.0.0
+      - name: Set monotonic APK version code
+        run: |
+          echo "APK_VERSION_CODE=$(( $(date -u +%s) / 60 ))" >> "$GITHUB_ENV"
+      - name: Restore stable APK signing key
+        env:
+          ANDROID_DEBUG_KEYSTORE_B64: ${{ secrets.ANDROID_DEBUG_KEYSTORE_B64 }}
+        run: |
+          if [ -z "$ANDROID_DEBUG_KEYSTORE_B64" ]; then
+            echo "::error::Set the ANDROID_DEBUG_KEYSTORE_B64 repository secret to sign stable upgradeable APKs"
+            exit 1
+          fi
+          echo "$ANDROID_DEBUG_KEYSTORE_B64" | base64 --decode > android/app/hanzi-debug.keystore
       - name: Build Android Debug APK
         working-directory: android
         run: ./gradlew assembleDebug

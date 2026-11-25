@@ -64,7 +64,12 @@ cd android
 The resulting debug APK will be located at `android/app/build/outputs/apk/debug/app-debug.apk`.
 
 ### GitHub Actions CI & Release Workflows
-- **CI Workflow (`.github/workflows/build-apk.yml`)**: Automatically runs the test suite and builds the Android debug APK, uploading it as a downloadable artifact on every push or pull request.
+- **CI Workflow (`.github/workflows/build-apk.yml`)**: Automatically runs the test suite and builds the Android debug APK, uploading it as a downloadable artifact on every push or pull request. CI APKs are signed with a stable debug key stored in the `ANDROID_DEBUG_KEYSTORE_B64` repository secret (base64 PKCS12, alias `androiddebugkey`, password `android`) and get a monotonic minute-based `versionCode`, so installing a newer CI APK over an older one upgrades in place and keeps app data (including saved custom lists in `localStorage`). To set the secret once:
+  ```bash
+  keytool -genkeypair -keystore hanzi-debug.p12 -storetype PKCS12 -alias androiddebugkey -keyalg RSA -keysize 2048 -storepass android -keypass android -dname "CN=hanzi-practice-buddy-debug" -validity 10000
+  gh secret set ANDROID_DEBUG_KEYSTORE_B64 --repo <owner>/<repo> --body-file <(base64 -w0 hanzi-debug.p12) && rm hanzi-debug.p12
+  ```
+  The key is debug-only and must never be committed; local builds without the keystore fall back to the standard user-local debug key.
 - **Release Workflow (`.github/workflows/release.yml`)**: Automatically runs tests, builds the Android APK, and publishes it as a GitHub Release asset when a version tag (e.g. `v1.0.1.0`) is pushed or when triggered manually via GitHub Actions workflow dispatch (supporting parameterized `tag`, `draft`, and `prerelease` inputs).
 
 ---
